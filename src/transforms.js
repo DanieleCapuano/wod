@@ -1,7 +1,7 @@
 import glm from 'glm-js';
 
+export const rotate_axis = _rotate_axis;
 export const rotate = _rotate;
-export const rotate_mat = _rotate_mat;
 export const translate = _translate;
 export const scale = _scale;
 export const create_reference_frame = _create_reference_frame;
@@ -17,7 +17,7 @@ function _lookUp(eye_pos, eye_up) {
 }
 
 
-function _rotate(invec, axis, degrees) {
+function _rotate_axis(invec, axis, degrees) {
     //rodriguez, NON quaterion stuff
     let P = invec,
         A = axis,
@@ -43,7 +43,7 @@ function _rotate(invec, axis, degrees) {
     );
 }
 
-function _rotate_mat(invec, amount_vec3) {
+function _rotate(invec, amount_vec3) {
     const
         rad = glm.radians, 
         tx = rad(amount_vec3.x),
