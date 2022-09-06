@@ -65,7 +65,7 @@ function _rotate(invec, amount_vec3) {
             0, 0, -sin(ty), cos(ty), 0,
             0, 0, 0, 1
         ),
-        r_z = glm.mat4(1);
+        r_z = glm.mat4(1);  //todo
 
         let M = r_x.mul(r_y).mul(r_z);
 
