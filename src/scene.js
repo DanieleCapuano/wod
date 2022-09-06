@@ -22,8 +22,8 @@ let ////////////////////////////////////////
     gl,
     objects_info = [];
 
-const square = square_mod.default || square_mod;    //1 square object
-const scene = scene_mod.default || scene_mod;       //contains camera position, fov, etc
+const square_desc = square_mod.default || square_mod;    //1 square object
+const scene_desc = scene_mod.default || scene_mod;       //contains camera position, fov, etc
 
 function _init_scene(in_canvas) {
     canvas = in_canvas;
@@ -31,9 +31,9 @@ function _init_scene(in_canvas) {
 
     gl = canvas.getContext('webgl2');
     console.info("Context and input data");
-    console.info(gl, square, scene);
+    console.info(gl, square_desc, scene_desc);
 
-    let input_objects = [square];
+    let input_objects = [square_desc];
     objects_info = _init_scene_struct(input_objects, scene);
     console.info("SCENE DATA", objects_info);
 
@@ -52,29 +52,32 @@ function _stop() {
 
 
 function _init_scene_struct(objects, scene_desc) {
-    let obj_list = _init_objects(objects);
-
-    console.info("TRANSLATE");
-    let v = glm.vec4(1),
-        v_t = T.scale(v, glm.vec3(.5)),
-        v_tt = T.translate(v_t, glm.vec3(.5));
-    console.info("SCALED 1", v_t, v_tt);
-
-    let model_view = glm.mat4(1);
-    let projection = glm.mat4(1);
+    let obj_list = _init_objects(objects, scene_desc);
 
     return {
         objects_to_draw: obj_list,
-        model_view_matrix: model_view,
-        projection_matrix: projection
+        projection_matrix: T.perspective(45, canvas.width / canvas.height, 1, 150)
     }
 }
 
-function _init_objects(objects) {
+function _init_objects(objects, scene_desc) {
     return objects.map((obj_def) => {
-        return obj_def.coordinates.map((coords_array) => {
-            let coords = glm.vec3(coords_array);
-            return glm.vec4(coords, 1.);
-        });
+        return {
+            coords: obj_def.coordinates.map((coords_array) => {
+                let coords = glm.vec3(coords_array);
+                return glm.vec4(coords, 1.);
+            }),
+            model_view: Object.keys(scene_desc)
+                .filter(scene_desc_key => scene_desc_key === obj_def.id)
+                .map(scene_desc_key => scene_desc[scene_desc_key].transforms || [])
+                .reduce((M, transform_desc) => {
+                    let //////////////////////////////////////
+                        transform_fn = T[transform_desc.type] || (() => glm.mat4(1)),
+                        ret_M = M;
+
+                    return ret_M.mul_eq(transform_fn(null, transform_desc.amount));
+
+                }, glm.mat4(1))
+        }
     });
 }

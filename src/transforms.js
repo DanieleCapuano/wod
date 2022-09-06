@@ -1,6 +1,7 @@
 import glm from 'glm-js';
 
 export const rotate = _rotate;
+export const rotate_mat = _rotate_mat;
 export const translate = _translate;
 export const scale = _scale;
 export const create_reference_frame = _create_reference_frame;
@@ -42,6 +43,35 @@ function _rotate(invec, axis, degrees) {
     );
 }
 
+function _rotate_mat(invec, amount_vec3) {
+    const
+        rad = glm.radians, 
+        tx = rad(amount_vec3.x),
+        ty = rad(amount_vec3.y),
+        tz = rad(amount_vec3.z),
+        sin = Math.sin,
+        cos = Math.cos;
+
+    const 
+        r_x = glm.mat4(
+            cos(tx), sin(tx), 0, 0,
+            -sin(tx), cos(tx), 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1
+        ),
+        r_y = glm.mat4(
+            1, 0, 0, 0,
+            0, cos(ty), sin(ty), 0,
+            0, 0, -sin(ty), cos(ty), 0,
+            0, 0, 0, 1
+        ),
+        r_z = glm.mat4(1);
+
+        let M = r_x.mul(r_y).mul(r_z);
+
+        return invec ? M.mul(invec) : M;
+}
+
 function _translate(invec, amount_vec3) {
     let translate_mat = glm.mat4(
         1, 0, 0, 0,
@@ -50,7 +80,7 @@ function _translate(invec, amount_vec3) {
         amount_vec3.x, amount_vec3.y, amount_vec3.z, 1
     );
 
-    return translate_mat.mul(invec);
+    return invec ? translate_mat.mul(invec) : translate_mat;
 }
 
 function _scale(invec, amount_vec3) {
@@ -61,7 +91,7 @@ function _scale(invec, amount_vec3) {
         0, 0, 0, 1
     );
 
-    return s_mat.mul(invec);
+    return invec ? s_mat.mul(invec) : s_mat;
 }
 
 function _create_reference_frame(eye_dir, up_vec) {
@@ -79,4 +109,20 @@ function _create_reference_frame(eye_dir, up_vec) {
 }
 
 
-function _perspective() { }
+function _perspective(fov_y, aspect_ratio, near, far) { 
+    const ////////////////// 
+        tan_fov = Math.tan(glm.radians(fov_y)) / 2,
+        n = near,
+        f = far,
+        t = tan_fov * Math.abs(near),
+        b = -t,
+        r = aspect_ratio * top,
+        l = -r;
+
+    return glm.mat4(
+        (2 * n) / (r - l), 0, 0, 0,
+        0, (2 * n) / (t - b), 0, 0,
+        (l + r) / (l - r), (b + t) / (b - t), (f + n) / (n - f), 1,
+        0, 0, (2 * f * n) / (f - n), 0
+    );
+}

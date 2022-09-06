@@ -7,21 +7,24 @@
     "square_1": {
         "transforms": [
             {
-                "translate": [
+                "type": "translate",
+                "amount": [
                     0,
                     0,
                     -2
                 ]
             },
             {
-                "scale": [
+                "type": "scale",
+                "amount": [
                     2,
                     2,
                     2
                 ]
             },
             {
-                "rotate": [
+                "type": "rotate",
+                "amount": [
                     0,
                     0,
                     0
