@@ -1,10 +1,13 @@
-#ifdef GL_ES
-precision mediump float;
-#endif
+#version 300 es
 
-uniform vec2 u_resolution;
-uniform vec2 u_mouse;
+precision mediump float;
+
+in vec3 a_position;
+
 uniform float u_time;
+uniform mat4 u_modelview;
+uniform mat4 u_projection;
 
 void main() {
+    gl_Position = u_projection * u_modelview * vec4(a_position, 1.);
 }

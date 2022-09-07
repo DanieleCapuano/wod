@@ -3,7 +3,7 @@
         "position": [
             0,
             0,
-            1
+            -1
         ],
         "up": [
             0,
@@ -13,30 +13,7 @@
     },
     "square_1": {
         "transforms": [
-            {
-                "type": "translate",
-                "amount": [
-                    0,
-                    0,
-                    -2
-                ]
-            },
-            {
-                "type": "scale",
-                "amount": [
-                    2,
-                    2,
-                    2
-                ]
-            },
-            {
-                "type": "rotate",
-                "amount": [
-                    0,
-                    0,
-                    0
-                ]
-            }
+            
         ]
     }
 }

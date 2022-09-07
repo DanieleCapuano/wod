@@ -31,18 +31,18 @@ function _init_scene(in_canvas) {
 
     gl = canvas.getContext('webgl2');
     console.info("Context and input data");
-    console.info(gl, square_desc, scene_desc);
+    console.info(gl, canvas, square_desc, scene_desc);
 
     let input_objects = [square_desc];
-    objects_info = _init_scene_struct(input_objects, scene);
+    objects_info = _init_scene_struct(input_objects, scene_desc);
     console.info("SCENE DATA", objects_info);
 
-    init_scene_webgl(gl);
+    init_scene_webgl(gl, objects_info);
 }
 
 function _run() {
     console.info("RUNNING START");
-    run_program(objects_info);
+    run_program(gl, objects_info);
 }
 
 function _stop() {
@@ -56,21 +56,30 @@ function _init_scene_struct(objects, scene_desc) {
 
     return {
         objects_to_draw: obj_list,
-        projection_matrix: T.perspective(45, canvas.width / canvas.height, 1, 150)
+        projection_matrix: T.perspective(45, canvas.width, canvas.height, .1, 150)
     }
 }
 
 function _init_objects(objects, scene_desc) {
     const C = scene_desc.camera,
-          Mlookup = T.lookUp(glm.vec3(C.position), glm.vec3(C.up));
+        Mlookup = T.lookUp(glm.vec3(C.position), glm.vec3(C.up));
+        // Mlookup = glm.lookUp()
 
     return objects.map((obj_def) => {
         return {
-            coords: obj_def.coordinates.map((coords_array) => {
-                let coords = glm.vec3(coords_array);
-                return glm.vec4(coords, 1.);
-            }),
-            model_view: Mlookup.mul(Object.keys(scene_desc)
+            id: obj_def.id,
+            coords: obj_def.coordinates
+                .map((coords_array) => glm.vec3(coords_array))
+                .reduce((ab, coord_buf, i) => {
+                    let icurr = i * 3,
+                        k = 0;
+                    for (let j = icurr; j < icurr + 3; j++) {
+                        ab[j] = coord_buf[k];
+                        k++;
+                    }
+                    return ab;
+                }, new ArrayBuffer(obj_def.coordinates.length * 3)),
+            model_view_matrix: Mlookup.mul(Object.keys(scene_desc)
                 .filter(scene_desc_key => scene_desc_key === obj_def.id)
                 .map(scene_desc_key => scene_desc[scene_desc_key].transforms || [])
                 .reduce((M, transform_desc) => {

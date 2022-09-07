@@ -11,9 +11,9 @@ export const perspective = _perspective;
 function _lookUp(eye_pos, eye_up) {
     let frame = create_reference_frame(eye_pos, eye_up),
         minus_eye_pos = eye_pos.mul(-1),
-        translate_mat = _translate(glm.vec3(1), minus_eye_pos);
+        translate_mat = _translate(null, minus_eye_pos);
 
-    return frame * translate_mat;
+    return frame.mul(translate_mat);
 }
 
 
@@ -119,7 +119,7 @@ function _perspective(fov_y, aspect_ratio, near, far) {
         f = Math.abs(far),
         t = tan_fov * Math.abs(near),
         b = -t,
-        r = aspect_ratio * top,
+        r = aspect_ratio * t,
         l = -r;
 
     return glm.mat4(

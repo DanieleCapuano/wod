@@ -1,7 +1,7 @@
 import * as square_vert from "../shaders/square.vert.glsl";
 import * as square_frag from "../shaders/square.frag.glsl";
 
-import { create_program, init_vao } from "./webgl_utils";
+import { buffer_data, create_program, init_vao, set_uniforms } from "./webgl_utils";
 
 /*********************************************************************
  * this module is responsible for the scene initialization and management
@@ -18,33 +18,56 @@ export const stop_program = _stop_program;
 
 
 ////////////////////////////////////////////////////////////
-let program_info = null,
+let programs_info = null,
     running = false;
 
-function _init_scene_webgl(gl, program_opts) {
-    program_info = {
-        attributes: {},
-        attributes_desc: [
-            {
-                name: 'a_position',
-                opts: [3, gl.FLOAT, false, 0, 0]
+function _init_scene_webgl(gl, objects_info) {
+    programs_info = objects_info.objects_to_draw.reduce((prog_info, oi) => {
+        const pi = _init_webgl_program(gl, square_vert, square_frag, {
+            attributes: {
+                a_position: {
+                    name: 'a_position',
+                    opts: [3, gl.FLOAT, false, 0, 0]
+                }
+            },
+            uniforms: {
+                u_time: {
+                    name: 'u_time',
+                    opts: {
+                        fn: '1f'
+                    }
+                },
+                u_modelview: {
+                    name: 'u_modelview',
+                    opts: {
+                        fn: 'Matrix4fv'
+                    }
+                },
+                u_projection: {
+                    name: 'u_projection',
+                    opts: {
+                        fn: 'Matrix4fv'
+                    }
+                }
             }
-        ],
-        uniforms: {},
-        uniforms_desc: [
-            {
-                name: 'u_time',
-                opts: ['1f']
-            }
-        ]
-    };
+        });
+        Object.keys(pi.attributes).forEach((attr_name) => {
+            buffer_data(gl, {
+                [attr_name]: oi.coords
+            }, pi);
+        });
 
-    return Object.assign(program_info, _init_webgl_program(square_vert, square_frag, program_info));
+        return Object.assign(prog_info, {
+            [oi.id]: Object.assign({}, oi, {
+                program_info: pi
+            })
+        });
+    }, {});
 }
 
-function _run_program(objects_info) {
+function _run_program(gl, objects_info) {
     running = true;
-    _do_run(objects_info);
+    _do_run(gl, objects_info);
 }
 
 function _stop_program() {
@@ -52,15 +75,34 @@ function _stop_program() {
 }
 
 
-function _do_run(objects_info, time) {
-    if (running) requestAnimationFrame(_do_run.bind(null, objects_info));
-    if (time !== undefined) console.info("TIME PASSING BY", time);
+function _do_run(gl, objects_info, time) {
+    if (running) requestAnimationFrame(_do_run.bind(null, gl, objects_info));
+
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    // gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.CULL_FACE);
+    gl.cullFace(gl.FRONT_AND_BACK);
+
     objects_info.objects_to_draw.forEach((obj) => {
-        //runs the actual webgl program to draw the object
+        const prog_info = programs_info[obj.id],
+            { program, vao } = prog_info.program_info;
+
+        gl.useProgram(program);
+        gl.bindVertexArray(vao);
+
+        set_uniforms(gl, {
+            u_time: time || 0,
+            u_modelview: obj.model_view_matrix.elements,
+            u_projection: objects_info.projection_matrix.elements
+        }, prog_info);
+
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
     });
 }
 
-function _init_webgl_program(vert, frag, program_info) {
-    program_info.program = create_program(vert, frag);
+function _init_webgl_program(gl, vert, frag, program_info) {
+    program_info.program = create_program(gl, vert, frag);
     return init_vao(gl, program_info);
 }

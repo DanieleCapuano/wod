@@ -21,6 +21,8 @@ function _onload() {
         return;
     }
 
+    canvas.setAttribute('width', window.innerWidth);
+    canvas.setAttribute('height', window.innerHeight);
     init_scene(canvas);
 
     start_btn.addEventListener('click', run_scene);
