@@ -1,7 +1,7 @@
 import * as square_vert from "../shaders/square.vert.glsl";
 import * as square_frag from "../shaders/square.frag.glsl";
 
-import { create_program } from "./webgl_utils";
+import { create_program, init_vao } from "./webgl_utils";
 
 /*********************************************************************
  * this module is responsible for the scene initialization and management
@@ -18,12 +18,28 @@ export const stop_program = _stop_program;
 
 
 ////////////////////////////////////////////////////////////
-let program = null,
+let program_info = null,
     running = false;
 
-function _init_scene_webgl(canvas, gl) {
-    _init_webgl_program(square_vert, square_frag);
-    return program;
+function _init_scene_webgl(gl, program_opts) {
+    program_info = {
+        attributes: {},
+        attributes_desc: [
+            {
+                name: 'a_position',
+                opts: [3, gl.FLOAT, false, 0, 0]
+            }
+        ],
+        uniforms: {},
+        uniforms_desc: [
+            {
+                name: 'u_time',
+                opts: ['1f']
+            }
+        ]
+    };
+
+    return Object.assign(program_info, _init_webgl_program(square_vert, square_frag, program_info));
 }
 
 function _run_program(objects_info) {
@@ -44,8 +60,7 @@ function _do_run(objects_info, time) {
     });
 }
 
-function _init_webgl_program(vert, frag) {
-    console.info("SHADERS SRC", vert, frag);
-
-    return create_program(vert, frag);
+function _init_webgl_program(vert, frag, program_info) {
+    program_info.program = create_program(vert, frag);
+    return init_vao(gl, program_info);
 }
