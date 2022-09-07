@@ -36,40 +36,43 @@ function _rotate_axis(invec, axis, degrees) {
             0, 0, 0, 1
         ).mul(P.mul(sin_theta)) +
         glm.mat4(
-            A.x*A.x, A.x*A.y, A.x*A.z, 0,
-            A.x*A.y, A.y*A.y, A.y*A.z, 0,
-            A.x*A.z, A.y*A.z, A.z*A.x, 1
+            A.x * A.x, A.x * A.y, A.x * A.z, 0,
+            A.x * A.y, A.y * A.y, A.y * A.z, 0,
+            A.x * A.z, A.y * A.z, A.z * A.x, 1
         ).mul(P.mul(one_minus_cos_theta))
     );
 }
 
 function _rotate(invec, amount_vec3) {
     const
-        rad = glm.radians, 
+        rad = glm.radians,
         tx = rad(amount_vec3.x),
         ty = rad(amount_vec3.y),
         tz = rad(amount_vec3.z),
         sin = Math.sin,
         cos = Math.cos;
 
-    const 
+    const
         r_x = glm.mat4(
-            cos(tx), sin(tx), 0, 0,
-            -sin(tx), cos(tx), 0, 0,
-            0, 0, 1, 0,
+            1, 0, 0, 0,
+            0, cos(tx), sin(tx), 0,
+            0, 0, -sin(tx), cos(tx), 0,
             0, 0, 0, 1
         ),
         r_y = glm.mat4(
-            1, 0, 0, 0,
-            0, cos(ty), sin(ty), 0,
-            0, 0, -sin(ty), cos(ty), 0,
-            0, 0, 0, 1
+            cos(ty), 0, -sin(ty), 0,
+            0, 1, 0, 0,
+            sin(ty), 0, cos(ty), 1
         ),
-        r_z = glm.mat4(1);  //todo
+        r_z = glm.mat4(
+            cos(tz), sin(tz), 0, 0,
+            -sin(tz), cos(tz), 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1
+        );
+    let M = r_x.mul(r_y).mul(r_z);
 
-        let M = r_x.mul(r_y).mul(r_z);
-
-        return invec ? M.mul(invec) : M;
+    return invec ? M.mul(invec) : M;
 }
 
 function _translate(invec, amount_vec3) {
@@ -109,11 +112,11 @@ function _create_reference_frame(eye_dir, up_vec) {
 }
 
 
-function _perspective(fov_y, aspect_ratio, near, far) { 
+function _perspective(fov_y, aspect_ratio, near, far) {
     const ////////////////// 
         tan_fov = Math.tan(glm.radians(fov_y)) / 2,
-        n = near,
-        f = far,
+        n = Math.abs(near),
+        f = Math.abs(far),
         t = tan_fov * Math.abs(near),
         b = -t,
         r = aspect_ratio * top,
@@ -122,7 +125,7 @@ function _perspective(fov_y, aspect_ratio, near, far) {
     return glm.mat4(
         (2 * n) / (r - l), 0, 0, 0,
         0, (2 * n) / (t - b), 0, 0,
-        (l + r) / (l - r), (b + t) / (b - t), (f + n) / (n - f), 1,
-        0, 0, (2 * f * n) / (f - n), 0
+        (l + r) / (r - l), (b + t) / (t - b), (f + n) / (n - f), -1,
+        0, 0, (2 * f * n) / (n - f), 0
     );
 }

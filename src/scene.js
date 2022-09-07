@@ -61,13 +61,16 @@ function _init_scene_struct(objects, scene_desc) {
 }
 
 function _init_objects(objects, scene_desc) {
+    const C = scene_desc.camera,
+          Mlookup = T.lookUp(glm.vec3(C.position), glm.vec3(C.up));
+
     return objects.map((obj_def) => {
         return {
             coords: obj_def.coordinates.map((coords_array) => {
                 let coords = glm.vec3(coords_array);
                 return glm.vec4(coords, 1.);
             }),
-            model_view: Object.keys(scene_desc)
+            model_view: Mlookup.mul(Object.keys(scene_desc)
                 .filter(scene_desc_key => scene_desc_key === obj_def.id)
                 .map(scene_desc_key => scene_desc[scene_desc_key].transforms || [])
                 .reduce((M, transform_desc) => {
@@ -75,9 +78,9 @@ function _init_objects(objects, scene_desc) {
                         transform_fn = T[transform_desc.type] || (() => glm.mat4(1)),
                         ret_M = M;
 
-                    return ret_M.mul_eq(transform_fn(null, transform_desc.amount));
+                    return ret_M.mul(transform_fn(null, transform_desc.amount));
 
-                }, glm.mat4(1))
+                }, glm.mat4(1)))
         }
     });
 }
