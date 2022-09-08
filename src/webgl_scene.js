@@ -99,6 +99,7 @@ function _do_run(gl, objects_info, time) {
             u_projection: objects_info.projection_matrix.elements
         }, prog_info);
 
+        //VERY IMPORTANT: the third argument represents the NUMBER OF POINTS to draw, NOT the number of objects (e.g. "triangles")
         gl.drawArrays(gl.TRIANGLES, 0, 6);
     });
 }

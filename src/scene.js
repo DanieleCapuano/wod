@@ -87,23 +87,23 @@ function _init_objects(objects, scene_desc) {
 
             ////////////////////
             //model_view computed multiplying up all the transformations in the object description file
-            model_view_matrix: Mlookat.mul(Object.keys(scene_desc)
-                .filter(scene_desc_key => scene_desc_key === obj_def.id)
-                .map(scene_desc_key => scene_desc[scene_desc_key].transforms || [])
-                .reduce((a, transf_list) => a.concat(transf_list), [])
-                .reduce((M, transform_desc) => {
-                    let //////////////////////////////////////
-                        transform_fn = T[transform_desc.type] || (() => glm.mat4(1));
+            model_view_matrix: Mlookat.mul(
+                Object.keys(scene_desc)
+                    .filter((scene_desc_key) => scene_desc_key === obj_def.id)
+                    .map((scene_desc_key) => scene_desc[scene_desc_key].transforms || [])
+                    .flat()
+                    .reduce((M, transform_desc) => {
+                        let transform_fn = T[transform_desc.type] || (() => glm.mat4(1));
+                        return M.mul(transform_fn(glm.vec3(transform_desc.amount)));
 
-                    return M.mul(transform_fn(glm.vec3(transform_desc.amount)));
-
-                }, glm.mat4(1)))
+                    }, glm.mat4(1))
+            )
         }
     });
 }
 
+//this prints the final results of the graphics pipeline computation, i.e. what arrives to the fragment shader
 function _print_debug(OI) {
-    ///DEBUG
     let f32a = new Float32Array(24),
         a = [],
         obj = OI.objects_to_draw[0],
