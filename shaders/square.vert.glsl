@@ -4,7 +4,6 @@ precision mediump float;
 
 in vec3 a_position;
 
-uniform float u_time;
 uniform mat4 u_modelview;
 uniform mat4 u_projection;
 

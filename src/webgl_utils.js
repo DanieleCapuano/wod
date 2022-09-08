@@ -79,11 +79,11 @@ function _buffer_data(gl, attrs_values, program_info) {
     gl.bindVertexArray(program_info.vao);
     Object.keys(program_info.attributes).forEach((attr_name) => {
         const ///////////////////////
-            { location, buffer, buffer_bind } = program_info.attributes[attr_name],
+            { buffer, buffer_bind } = program_info.attributes[attr_name],
             val = attrs_values[attr_name];
 
         gl.bindBuffer(buffer_bind, buffer);
-        gl.bufferData(buffer_bind, val[0], gl.STATIC_DRAW);
+        gl.bufferData(buffer_bind, val, gl.STATIC_DRAW, 0);
         gl.bindBuffer(buffer_bind, null);
     });
     gl.bindVertexArray(null);

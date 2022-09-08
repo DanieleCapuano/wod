@@ -78,12 +78,12 @@ function _stop_program() {
 function _do_run(gl, objects_info, time) {
     if (running) requestAnimationFrame(_do_run.bind(null, gl, objects_info));
 
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.clearColor(0, 0, 0, 0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    // gl.clearColor(0, 0, 0, 1);
+    // gl.clear(gl.COLOR_BUFFER_BIT);
     // gl.enable(gl.DEPTH_TEST);
-    gl.enable(gl.CULL_FACE);
-    gl.cullFace(gl.FRONT_AND_BACK);
+    // gl.enable(gl.CULL_FACE);
+    // gl.cullFace(gl.FRONT_AND_BACK);
+    // gl.disable(gl.CULL_FACE);
 
     objects_info.objects_to_draw.forEach((obj) => {
         const prog_info = programs_info[obj.id],
@@ -91,6 +91,7 @@ function _do_run(gl, objects_info, time) {
 
         gl.useProgram(program);
         gl.bindVertexArray(vao);
+        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
         set_uniforms(gl, {
             u_time: time || 0,
