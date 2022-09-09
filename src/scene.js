@@ -1,7 +1,4 @@
 import glm from "glm-js";
-
-import * as square_mod from "../data/square.json";
-import * as scene_mod from "../data/scene.json";
 import * as T from './transforms';
 
 import { init_scene_webgl, run_program, stop_program } from "./webgl_scene";
@@ -22,18 +19,17 @@ let ////////////////////////////////////////
     gl,
     objects_info = [];
 
-const square_desc = square_mod.default || square_mod;    //1 square object
-const scene_desc = scene_mod.default || scene_mod;       //contains camera position, fov, etc
-
-function _init_scene(in_canvas) {
+function _init_scene(in_canvas, desc) {
     canvas = in_canvas;
-    if (!canvas) return;
+    if (!canvas || !desc) return;
+
+    const {scene_desc, objects_desc} = desc;
 
     gl = canvas.getContext('webgl2');
     console.info("Context and input data");
-    console.info(gl, canvas, square_desc, scene_desc);
+    console.info(gl, canvas, objects_desc, scene_desc);
 
-    let input_objects = [square_desc];
+    let input_objects = objects_desc;
     objects_info = _init_scene_struct(input_objects, scene_desc);
     console.info("SCENE DATA", objects_info);
 

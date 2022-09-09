@@ -8,6 +8,9 @@ export const create_reference_frame = _create_reference_frame;
 export const lookAt = _lookAt;
 export const perspective = _perspective;
 
+//////////////////////////////////////////////////////////
+//Functions implementation
+
 function _lookAt(eye_pos, eye_center, eye_up) {
     let gaze = eye_pos.sub(eye_center),
         frame = create_reference_frame(gaze, eye_up),
@@ -16,7 +19,6 @@ function _lookAt(eye_pos, eye_center, eye_up) {
 
     return frame.mul(translate_mat);
 }
-
 
 function _rotate_axis(invec, axis, degrees) {
     //rodriguez, NON quaterion stuff
