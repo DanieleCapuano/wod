@@ -65,12 +65,11 @@ function _init_objects(objects, scene_desc) {
         Mlookat = T.lookAt(glm.vec3(C.position), glm.vec3(C.center), glm.vec3(C.up));
 
     return objects.map((obj_def) => {
-        const { coords_dim } = obj_def;
-        return {
-            id: obj_def.id,
+        const { coords_dim, coordinates_def } = obj_def;
+        return Object.assign(obj_def, {
             ////////////////////
             //Coordinates put in a single Float32Array
-            coords: obj_def.coordinates
+            coords: coordinates_def
                 .reduce((ab, coord_buf, i) => {
                     let icurr = i * coords_dim,
                         k = 0;
@@ -79,7 +78,7 @@ function _init_objects(objects, scene_desc) {
                         k++;
                     }
                     return ab;
-                }, new Float32Array(obj_def.coordinates.length * coords_dim)),
+                }, new Float32Array(coordinates_def.length * coords_dim)),
 
             ////////////////////
             //model_view computed multiplying up all the transformations in the object description file
@@ -94,7 +93,7 @@ function _init_objects(objects, scene_desc) {
 
                     }, glm.mat4(1))
             )
-        }
+        })
     });
 }
 

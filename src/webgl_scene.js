@@ -1,6 +1,3 @@
-import * as square_vert from "../shaders/square.vert.glsl";
-import * as square_frag from "../shaders/square.frag.glsl";
-
 import { buffer_data, create_program, init_vao, set_uniforms } from "./webgl_utils";
 
 /*********************************************************************
@@ -23,34 +20,30 @@ let programs_info = null,
 
 function _init_scene_webgl(gl, objects_info) {
     programs_info = objects_info.objects_to_draw.reduce((prog_info, oi) => {
-        const pi = _init_webgl_program(gl, square_vert, square_frag, {
-            attributes: {
-                a_position: {
-                    name: 'a_position',
-                    opts: [3, gl.FLOAT, false, 0, 0]
-                }
-            },
-            uniforms: {
-                u_time: {
-                    name: 'u_time',
-                    opts: {
-                        fn: '1f'
-                    }
-                },
-                u_modelview: {
-                    name: 'u_modelview',
-                    opts: {
-                        fn: 'Matrix4fv'
-                    }
-                },
-                u_projection: {
-                    name: 'u_projection',
-                    opts: {
-                        fn: 'Matrix4fv'
-                    }
-                }
-            }
-        });
+        const //////////
+            { program_info_def, coords_dim } = oi,
+            { vertex, fragment } = program_info_def.shaders,
+            { shaders_data } = program_info_def;
+
+        let pi = _init_webgl_program(gl, vertex.code, fragment.code, Object.assign(shaders_data, {
+            attributes: Object.keys(shaders_data.attributes).reduce((a_obj, attr_key) => {
+                let ////////////////
+                    attr_def = shaders_data.attributes[attr_key],
+                    opts = attr_def.opts;
+
+                attr_def.opts = [
+                    coords_dim,         //size
+                    gl[opts.data_type],  //type
+                    opts.normalized,     //normalized
+                    opts.stride,         //stride
+                    opts.offset          //offset
+                ];
+                return Object.assign(a_obj, {
+                    [attr_key]: attr_def
+                });
+            }, {})
+        }));
+
         Object.keys(pi.attributes).forEach((attr_name) => {
             buffer_data(gl, {
                 [attr_name]: oi.coords
@@ -87,7 +80,8 @@ function _do_run(gl, objects_info, time) {
 
     objects_info.objects_to_draw.forEach((obj) => {
         const prog_info = programs_info[obj.id],
-            { program, vao } = prog_info.program_info;
+            { number_of_points, primitive, program_info } = prog_info,
+            { program, vao } = program_info;
 
         gl.useProgram(program);
         gl.bindVertexArray(vao);
@@ -100,7 +94,7 @@ function _do_run(gl, objects_info, time) {
         }, prog_info);
 
         //VERY IMPORTANT: the third argument represents the NUMBER OF POINTS to draw, NOT the number of objects (e.g. "triangles")
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
+        gl.drawArrays(gl[primitive], 0, number_of_points);
     });
 }
 

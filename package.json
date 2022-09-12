@@ -9,8 +9,9 @@
     "build": "rimraf dist && webpack --config webpack.config.js",
     "build-watch": "rimraf dist && webpack -w --config webpack.config.js",
     "install-test": "cd test && npm i",
-    "build-test": "cd test && rimraf dist && webpack -w --config webpack.config_test.js",
-    "test": "cd test && http-server . -p 3133 -o"
+    "build-test": "cd test && rimraf dist && webpack --config webpack.config_test.js",
+    "build-test-watch": "cd test && rimraf dist && webpack -w --config webpack.config_test.js",
+    "test": "npm run build-test && cd test && http-server . -p 3133 -o"
   },
   "dependencies": {
     "webpack": "^5.74.0",
