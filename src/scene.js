@@ -33,7 +33,7 @@ function _init_scene(in_canvas, desc) {
     objects_info = _init_scene_struct(input_objects, scene_desc);
     // console.info("SCENE DATA", objects_info);
 
-    init_scene_webgl(gl, objects_info);
+    return init_scene_webgl(gl, objects_info);
 }
 
 function _run() {

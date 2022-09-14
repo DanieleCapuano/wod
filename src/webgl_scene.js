@@ -32,7 +32,7 @@ function _init_scene_webgl(gl, objects_info) {
                     opts = attr_def.opts;
 
                 attr_def.opts = [
-                    coords_dim,         //size
+                    opts.size || coords_dim,         //size
                     gl[opts.data_type],  //type
                     opts.normalized,     //normalized
                     opts.stride,         //stride
@@ -53,9 +53,12 @@ function _init_scene_webgl(gl, objects_info) {
         return Object.assign(prog_info, {
             [oi.id]: Object.assign({}, oi, {
                 program_info: pi
-            })
+            }),
+            gl
         });
     }, {});
+
+    return programs_info;
 }
 
 function _run_program(gl, objects_info) {

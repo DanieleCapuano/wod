@@ -39,7 +39,7 @@ function _createShader(gl, sourceCode, type) {
 
 function _init_vao(gl, program_info) {
     const { program, attributes, uniforms } = program_info;
-    const vao = gl.createVertexArray();
+    const vao = program_info.vao || gl.createVertexArray();
     gl.bindVertexArray(vao);
 
     const buffer = gl.createBuffer(),
