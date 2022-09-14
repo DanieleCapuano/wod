@@ -26,23 +26,23 @@ function _init_scene(in_canvas, desc) {
     const {scene_desc, objects_desc} = desc;
 
     gl = canvas.getContext('webgl2');
-    console.info("Context and input data");
-    console.info(gl, canvas, objects_desc, scene_desc);
+    // console.info("Context and input data");
+    // console.info(gl, canvas, objects_desc, scene_desc);
 
     let input_objects = objects_desc;
     objects_info = _init_scene_struct(input_objects, scene_desc);
-    console.info("SCENE DATA", objects_info);
+    // console.info("SCENE DATA", objects_info);
 
     init_scene_webgl(gl, objects_info);
 }
 
 function _run() {
-    console.info("RUNNING START");
+    // console.info("RUNNING START");
     run_program(gl, objects_info);
 }
 
 function _stop() {
-    console.info("STOP RUNNING");
+    // console.info("STOP RUNNING");
     stop_program();
 }
 
@@ -138,5 +138,5 @@ function _print_debug(OI) {
             (vr + vl) / 2, (vt + vb) / 2, 1 / 2, 1
         );
     a = a.map(vec => viewport_mat.mul(vec));
-    console.info("TRANSFORMED ARRS", f32a, a);
+    // console.info("TRANSFORMED ARRS", f32a, a);
 }
