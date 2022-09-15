@@ -1,4 +1,4 @@
-import { buffer_data, create_program, init_vao, set_uniforms } from "./webgl_utils";
+import { buffer_data, create_program, init_vao, setup_indices, set_uniforms } from "./webgl_utils";
 
 /*********************************************************************
  * this module is responsible for the scene initialization and management
@@ -50,9 +50,13 @@ function _init_scene_webgl(gl, objects_info) {
             }, pi);
         });
 
+        let index_buffer = oi.indices ? setup_indices(gl, oi.indices) : null;
+
         return Object.assign(prog_info, {
             [oi.id]: Object.assign({}, oi, {
-                program_info: pi
+                program_info: pi,
+                index_buffer,
+                object_to_draw_ref: oi
             }),
             gl
         });
@@ -74,17 +78,14 @@ function _stop_program() {
 function _do_run(gl, objects_info, time) {
     if (running) requestAnimationFrame(_do_run.bind(null, gl, objects_info));
 
-    // gl.clearColor(0, 0, 0, 1);
-    // gl.clear(gl.COLOR_BUFFER_BIT);
-    // gl.enable(gl.DEPTH_TEST);
-    // gl.enable(gl.CULL_FACE);
-    // gl.cullFace(gl.FRONT_AND_BACK);
-    // gl.disable(gl.CULL_FACE);
+    objects_info.run_callback && objects_info.run_callback(gl, objects_info, time);
 
     objects_info.objects_to_draw.forEach((obj) => {
         const prog_info = programs_info[obj.id],
             { number_of_points, primitive, program_info } = prog_info,
             { program, vao } = program_info;
+
+        obj.run_callback && obj.run_callback(gl, obj, time);
 
         gl.useProgram(program);
         gl.bindVertexArray(vao);
@@ -96,8 +97,13 @@ function _do_run(gl, objects_info, time) {
             u_projection: objects_info.projection_matrix.elements
         }, prog_info);
 
-        //VERY IMPORTANT: the third argument represents the NUMBER OF POINTS to draw, NOT the number of objects (e.g. "triangles")
-        gl.drawArrays(gl[primitive], 0, number_of_points);
+        if (prog_info.index_buffer) {
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, prog_info.index_buffer);
+            gl.drawElements(gl[primitive], number_of_points, gl.UNSIGNED_SHORT, 0);
+        }
+        else {
+            gl.drawArrays(gl[primitive], 0, number_of_points);
+        }
     });
 }
 

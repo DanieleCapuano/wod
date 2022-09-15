@@ -1,5 +1,6 @@
 export const create_program = _create_program;
 export const init_vao = _init_vao;
+export const setup_indices = _setup_indices;
 export const buffer_data = _buffer_data;
 export const set_uniforms = _set_uniforms;
 
@@ -73,6 +74,24 @@ function _init_vao(gl, program_info) {
 
     program_info.vao = vao;
     return program_info;
+}
+
+function _setup_indices(gl, indices_data) {
+    const indexBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+
+    // This array defines each face as two triangles, using the
+    // indices into the vertex array to specify each triangle's
+    // position.
+
+    const indices = indices_data;
+
+    // Now send the element array to GL
+
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,
+        new Uint16Array(indices), gl.STATIC_DRAW);
+
+    return indexBuffer;
 }
 
 function _buffer_data(gl, attrs_values, program_info) {

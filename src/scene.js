@@ -8,6 +8,7 @@ import { init_scene_webgl, run_program, stop_program } from "./webgl_scene";
  * for what concerns the objects and scene structures and math operations
  * it creates vectors and matrices to be passed to the webgl_scene
  */
+const DEBUG = false;
 
 export const init_scene = _init_scene;
 export const run_scene = _run;
@@ -23,7 +24,7 @@ function _init_scene(in_canvas, desc) {
     canvas = in_canvas;
     if (!canvas || !desc) return;
 
-    const {scene_desc, objects_desc} = desc;
+    const { scene_desc, objects_desc } = desc;
 
     gl = canvas.getContext('webgl2');
     // console.info("Context and input data");
@@ -33,7 +34,10 @@ function _init_scene(in_canvas, desc) {
     objects_info = _init_scene_struct(input_objects, scene_desc);
     // console.info("SCENE DATA", objects_info);
 
-    return init_scene_webgl(gl, objects_info);
+    return {
+        webgl_scene: init_scene_webgl(gl, objects_info),
+        objects_info
+    };
 }
 
 function _run() {
@@ -55,7 +59,7 @@ function _init_scene_struct(objects, scene_desc) {
         projection_matrix: T.perspective(90, canvas.width / canvas.height, .1, 99)
     }
 
-    _print_debug(OI);
+    DEBUG && _print_debug(OI);
 
     return OI;
 }
@@ -104,7 +108,7 @@ function _print_debug(OI) {
         obj = OI.objects_to_draw[0],
         coords = obj.coords,
         j = 0;
-    for (let i = 0; i < 18; i += 3) {
+    for (let i = 0; i < coords.length * obj.coords_dim; i += obj.coords_dim) {
         // console.info("IT", i, coords[i], coords[i + 1], coords[i + 2]);
         let mvp = OI.projection_matrix.mul(
             obj.model_view_matrix
