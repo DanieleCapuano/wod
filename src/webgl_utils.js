@@ -57,6 +57,8 @@ function _init_vao(gl, program_info) {
             location,
             buffer,
             buffer_bind
+        }, {
+            is_position: attr_desc.is_position
         });
     });
 
@@ -96,15 +98,16 @@ function _setup_indices(gl, indices_data) {
 
 function _buffer_data(gl, attrs_values, program_info) {
     gl.bindVertexArray(program_info.vao);
-    Object.keys(program_info.attributes).forEach((attr_name) => {
-        const ///////////////////////
-            { buffer, buffer_bind } = program_info.attributes[attr_name],
-            val = attrs_values[attr_name];
+    Object.keys(attrs_values)
+        .forEach((attr_name) => {
+            const ///////////////////////
+                { buffer, buffer_bind } = program_info.attributes[attr_name],
+                val = attrs_values[attr_name];
 
-        gl.bindBuffer(buffer_bind, buffer);
-        gl.bufferData(buffer_bind, val, gl.STATIC_DRAW, 0);
-        gl.bindBuffer(buffer_bind, null);
-    });
+            gl.bindBuffer(buffer_bind, buffer);
+            gl.bufferData(buffer_bind, val, gl.STATIC_DRAW, 0);
+            gl.bindBuffer(buffer_bind, null);
+        });
     gl.bindVertexArray(null);
 }
 

@@ -44,11 +44,13 @@ function _init_scene_webgl(gl, objects_info) {
             }, {})
         }));
 
-        Object.keys(pi.attributes).forEach((attr_name) => {
-            buffer_data(gl, {
-                [attr_name]: oi.coords
-            }, pi);
-        });
+        Object.keys(pi.attributes)
+            .filter(attr_key => pi.attributes[attr_key].is_position)
+            .forEach((attr_name) => {
+                buffer_data(gl, {
+                    [attr_name]: oi.coords
+                }, pi);
+            });
 
         let index_buffer = oi.indices ? setup_indices(gl, oi.indices) : null;
 
@@ -85,7 +87,7 @@ function _do_run(gl, objects_info, time) {
             { number_of_points, primitive, program_info } = prog_info,
             { program, vao } = program_info;
 
-        obj.run_callback && obj.run_callback(gl, obj, time);
+        obj.run_callback && obj.run_callback(gl, obj, programs_info, time);
 
         gl.useProgram(program);
         gl.bindVertexArray(vao);

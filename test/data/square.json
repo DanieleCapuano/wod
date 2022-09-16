@@ -17,6 +17,7 @@
             "attributes": {
                 "a_position": {
                     "name": "a_position",
+                    "is_position": true,
                     "opts": {
                         "data_type": "FLOAT",
                         "normalized": false,
