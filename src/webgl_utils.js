@@ -114,7 +114,7 @@ function _buffer_data(gl, attrs_values, program_info) {
 function _set_uniforms(gl, uniforms_values, object_info) {
     const { program_info } = object_info;
 
-    Object.keys(program_info.uniforms).forEach((uniform_name) => {
+    Object.keys(uniforms_values).forEach((uniform_name) => {
         const /////////////////////////
             uniform_desc = program_info.uniforms[uniform_name],
             { opts, location } = uniform_desc;

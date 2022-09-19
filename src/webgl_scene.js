@@ -87,7 +87,7 @@ function _do_run(gl, objects_info, time) {
             { number_of_points, primitive, program_info } = prog_info,
             { program, vao } = program_info;
 
-        obj.run_callback && obj.run_callback(gl, obj, programs_info, time);
+        prog_info.run_callback && prog_info.run_callback(gl, obj, programs_info, time);
 
         gl.useProgram(program);
         gl.bindVertexArray(vao);
