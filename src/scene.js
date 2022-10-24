@@ -8,7 +8,7 @@ import { init_scene_webgl, run_program, stop_program } from "./webgl_scene";
  * for what concerns the objects and scene structures and math operations
  * it creates vectors and matrices to be passed to the webgl_scene
  */
-const DEBUG = false;
+const DEBUG = true;
 
 export const init_scene = _init_scene;
 export const run_scene = _run;
@@ -68,6 +68,8 @@ function _init_objects(objects, scene_desc) {
     const C = scene_desc.camera,
         Mlookat = T.lookAt(glm.vec3(C.position), glm.vec3(C.center), glm.vec3(C.up));
 
+    DEBUG && console.info("M LOOK AT", Mlookat.elements);
+
     return objects.map((obj_def) => {
         const { coords_dim, coordinates_def } = obj_def;
         return Object.assign(obj_def, {
@@ -91,9 +93,15 @@ function _init_objects(objects, scene_desc) {
                     .filter((scene_desc_key) => scene_desc_key === obj_def.id)
                     .map((scene_desc_key) => scene_desc[scene_desc_key].transforms || [])
                     .flat()
-                    .reduce((M, transform_desc) => {
+                    .reduce((M, transform_desc, i, arr) => {
                         let transform_fn = T[transform_desc.type] || (() => glm.mat4(1));
-                        return M.mul(transform_fn(glm.vec3(transform_desc.amount)));
+                        let M_ret = M.mul(transform_fn(glm.vec3(transform_desc.amount)));
+
+                        if (i === arr.length - 1 && DEBUG) {
+                            console.info("M MODEL", M_ret.elements);
+                        }
+
+                        return M_ret;
 
                     }, glm.mat4(1))
             )
@@ -103,44 +111,60 @@ function _init_objects(objects, scene_desc) {
 
 //this prints the final results of the graphics pipeline computation, i.e. what arrives to the fragment shader
 function _print_debug(OI) {
-    let f32a = new Float32Array(24),
-        a = [],
-        obj = OI.objects_to_draw[0],
-        coords = obj.coords,
-        j = 0;
-    for (let i = 0; i < coords.length * obj.coords_dim; i += obj.coords_dim) {
-        // console.info("IT", i, coords[i], coords[i + 1], coords[i + 2]);
-        let mvp = OI.projection_matrix.mul(
-            obj.model_view_matrix
-        );
-        let transf_vec = mvp.mul(
-            glm.vec4(coords[i], coords[i + 1], coords[i + 2], 1.)
-        ), tr_elems = transf_vec.elements;
+    OI.objects_to_draw.forEach((obj) => {
+        console.info("M MODELVIEW", obj.model_view_matrix.elements);
+        console.info("M PROJECTION", OI.projection_matrix.elements);
+        let ////////////////////////////////
+            model_view_matrix = obj.model_view_matrix,
+            projection_matrix = OI.projection_matrix,
+            mvp = OI.projection_matrix.mul(
+                obj.model_view_matrix
+            );
+        console.info("M MVP", mvp.elements);
 
-        f32a[j] = tr_elems[0];
-        f32a[j + 1] = tr_elems[1];
-        f32a[j + 2] = tr_elems[2];
-        f32a[j + 3] = tr_elems[3];
+        let //////////////////////////////////
+            a = [],
+            coords = obj.coords,
+            j = 0,
+            f32a = new Float32Array(coords.length * (obj.coords_dim + 1)); //obj.coords_dim + 1 because we're sending homogeneous coordinates to the GPU
 
-        a.push(glm.vec4(
-            tr_elems[0] / tr_elems[3],
-            tr_elems[1] / tr_elems[3],
-            tr_elems[2] / tr_elems[3],
-            1.
-        ));
+        for (let i = 0; i < coords.length; i += obj.coords_dim) {
+            console.info("IT", i, coords[i], coords[i + 1], coords[i + 2]);
+            let ////////////////////////////////
+                transf_vec_mv = model_view_matrix.mul(
+                    glm.vec4(coords[i], coords[i + 1], coords[i + 2], 1.)
+                ),
+                transf_vec_pj = projection_matrix.mul(transf_vec_mv),
+                tr_elems = transf_vec_pj.elements;
 
-        j += 4;
-    }
-    let vl = 0,
-        vr = canvas.width,
-        vt = canvas.height,
-        vb = 0,
-        viewport_mat = glm.mat4(
-            (vr - vl) / 2, 0, 0, 0,
-            0, (vt - vb) / 2, 0, 0,
-            0, 0, 1 / 2, 0,
-            (vr + vl) / 2, (vt + vb) / 2, 1 / 2, 1
-        );
-    a = a.map(vec => viewport_mat.mul(vec));
-    // console.info("TRANSFORMED ARRS", f32a, a);
+            console.info("TRANSFORMED COORDS MODELVIEW", transf_vec_mv.elements);
+            console.info("TRANSFORMED COORDS PROJ", transf_vec_pj.elements);
+
+            f32a[j] = tr_elems[0];
+            f32a[j + 1] = tr_elems[1];
+            f32a[j + 2] = tr_elems[2];
+            f32a[j + 3] = tr_elems[3];
+
+            a.push(glm.vec4(
+                tr_elems[0] / tr_elems[3],
+                tr_elems[1] / tr_elems[3],
+                tr_elems[2] / tr_elems[3],
+                1.
+            ));
+
+            j += 4;
+        }
+        let vl = 0,
+            vr = canvas.width,
+            vt = canvas.height,
+            vb = 0,
+            viewport_mat = glm.mat4(
+                (vr - vl) / 2, 0, 0, 0,
+                0, (vt - vb) / 2, 0, 0,
+                0, 0, 1 / 2, 0,
+                (vr + vl) / 2, (vt + vb) / 2, 1 / 2, 1
+            );
+        a = a.map(vec => viewport_mat.mul(vec));
+        console.info("TRANSFORMED ARRS", f32a, a.map(vec => vec.elements).flat());
+    });
 }
