@@ -1,7 +1,7 @@
 import glm from "glm-js";
 import * as T from './transforms';
 
-import { init_scene_webgl, run_program, stop_program } from "./webgl_scene";
+import { draw_objects, init_scene_webgl, run_program, stop_program } from "./webgl_scene";
 
 /*********************************************************************
  * this module is responsible for the scene initialization
@@ -18,6 +18,12 @@ export const stop_scene = _stop;
 let ////////////////////////////////////////
     canvas,
     gl,
+    program_running = false,
+    objects_descriptions = [],
+    scene_description = {},
+    rot_amount = 1,
+    camera_rot_x = 0,
+    camera_rot_y = 0,
     objects_info = [];
 
 function _init_scene(in_canvas, desc) {
@@ -27,12 +33,12 @@ function _init_scene(in_canvas, desc) {
     const { scene_desc, objects_desc } = desc;
 
     gl = canvas.getContext('webgl2');
-    // console.info("Context and input data");
-    // console.info(gl, canvas, objects_desc, scene_desc);
 
-    let input_objects = objects_desc;
-    objects_info = _init_scene_struct(input_objects, scene_desc);
-    // console.info("SCENE DATA", objects_info);
+    objects_descriptions = objects_desc;
+    scene_description = scene_desc;
+    objects_info = _init_scene_struct(objects_descriptions, scene_description);
+
+    DEBUG && _listen_to_keys();
 
     return {
         webgl_scene: init_scene_webgl(gl, objects_info),
@@ -41,18 +47,47 @@ function _init_scene(in_canvas, desc) {
 }
 
 function _run() {
-    // console.info("RUNNING START");
-    run_program(gl, objects_info);
+    program_running = true;
+    _do_run();
+}
+
+function _do_run(time) {
+    if (program_running) requestAnimationFrame(_do_run);
+    objects_info.objects_to_draw = _compute_modelview(objects_info.objects_to_draw, scene_description);
+    draw_objects(gl, objects_info, time || 0);
 }
 
 function _stop() {
-    // console.info("STOP RUNNING");
-    stop_program();
+    program_running = false;
+}
+
+function _listen_to_keys() {
+    document.addEventListener('keydown', (e) => {
+        switch (e.key) {
+            case "Down": // IE/Edge specific value
+            case "ArrowDown":
+                camera_rot_x -= rot_amount;
+                break;
+            case "Up": // IE/Edge specific value
+            case "ArrowUp":
+                camera_rot_x += rot_amount;
+                break;
+            case "Left": // IE/Edge specific value
+            case "ArrowLeft":
+                camera_rot_y += rot_amount;
+                break;
+            case "Right": // IE/Edge specific value
+            case "ArrowRight":
+                camera_rot_y -= rot_amount;
+                break;
+        }
+        DEBUG && console.info("ROT", camera_rot_x, camera_rot_y);
+    });
 }
 
 
 function _init_scene_struct(objects, scene_desc) {
-    let obj_list = _init_objects(objects, scene_desc);
+    let obj_list = _compute_modelview(_compute_objects_coords(objects, scene_desc), scene_desc);
 
     const OI = {
         objects_to_draw: obj_list,
@@ -64,12 +99,7 @@ function _init_scene_struct(objects, scene_desc) {
     return OI;
 }
 
-function _init_objects(objects, scene_desc) {
-    const C = scene_desc.camera,
-        Mlookat = T.lookAt(glm.vec3(C.position), glm.vec3(C.center), glm.vec3(C.up));
-
-    DEBUG && console.info("M LOOK AT", Mlookat.elements);
-
+function _compute_objects_coords(objects, scene_desc) {
     return objects.map((obj_def) => {
         const { coords_dim, coordinates_def } = obj_def;
         return Object.assign(obj_def, {
@@ -87,26 +117,39 @@ function _init_objects(objects, scene_desc) {
                 }, new Float32Array(coordinates_def.length * coords_dim)),
 
             ////////////////////
-            //model_view computed multiplying up all the transformations in the object description file
-            model_view_matrix: Mlookat.mul(
-                Object.keys(scene_desc)
-                    .filter((scene_desc_key) => scene_desc_key === obj_def.id)
-                    .map((scene_desc_key) => scene_desc[scene_desc_key].transforms || [])
-                    .flat()
-                    .reduce((M, transform_desc, i, arr) => {
-                        let transform_fn = T[transform_desc.type] || (() => glm.mat4(1));
-                        let M_ret = M.mul(transform_fn(glm.vec3(transform_desc.amount)));
+            //model transform computed multiplying up all the transformations in the object description file
+            model_matrix: Object.keys(scene_desc)
+                .filter((scene_desc_key) => scene_desc_key === obj_def.id)
+                .map((scene_desc_key) => scene_desc[scene_desc_key].transforms || [])
+                .flat()
+                .reduce((M, transform_desc, i, arr) => {
+                    let transform_fn = T[transform_desc.type] || (() => glm.mat4(1));
+                    let M_ret = M.mul(transform_fn(glm.vec3(transform_desc.amount)));
 
-                        if (i === arr.length - 1 && DEBUG) {
-                            console.info("M MODEL", M_ret.elements);
-                        }
+                    return M_ret;
 
-                        return M_ret;
-
-                    }, glm.mat4(1))
-            )
+                }, glm.mat4(1))
         })
     });
+}
+
+//this is put in a separate function because it's computed at each animation frame
+function _compute_modelview(objects, scene_desc) {
+    const C = scene_desc.camera;
+    let C_pos = glm.vec3(1),
+        C_up = glm.vec3(C.up),
+        Mlookat = glm.mat4(1);
+
+    let M_r = T.rotate_axis(glm.vec3(1, 0, 0), camera_rot_x).mul(
+        T.rotate_axis(glm.vec3(0, 1, 0), camera_rot_y)
+    );
+
+    C_pos = M_r.mul(glm.vec4(C.position.concat(1)));
+    C_up = T.rotate_axis(glm.vec3(1, 0, 0), camera_rot_x, C_up);
+    Mlookat = T.lookAt(C_pos.xyz, glm.vec3(C.center), C_up);
+
+    objects.forEach((obj_def) => obj_def.model_view_matrix = Mlookat.mul(obj_def.model_matrix));
+    return objects;
 }
 
 //this prints the final results of the graphics pipeline computation, i.e. what arrives to the fragment shader

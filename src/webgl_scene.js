@@ -10,13 +10,11 @@ import { buffer_data, create_program, init_vao, setup_indices, set_uniforms } fr
  */
 
 export const init_scene_webgl = _init_scene_webgl;
-export const run_program = _run_program;
-export const stop_program = _stop_program;
+export const draw_objects = _draw_objects;
 
 
 ////////////////////////////////////////////////////////////
-let programs_info = null,
-    running = false;
+let programs_info = null;
 
 function _init_scene_webgl(gl, objects_info) {
     programs_info = objects_info.objects_to_draw.reduce((prog_info, oi) => {
@@ -67,19 +65,8 @@ function _init_scene_webgl(gl, objects_info) {
     return programs_info;
 }
 
-function _run_program(gl, objects_info) {
-    running = true;
-    _do_run(gl, objects_info);
-}
 
-function _stop_program() {
-    running = false;
-}
-
-
-function _do_run(gl, objects_info, time) {
-    if (running) requestAnimationFrame(_do_run.bind(null, gl, objects_info));
-
+function _draw_objects(gl, objects_info, time) {
     objects_info.run_callback && objects_info.run_callback(gl, objects_info, time);
 
     objects_info.objects_to_draw.forEach((obj) => {

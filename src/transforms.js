@@ -11,7 +11,7 @@ export const perspective = _perspective;
 //////////////////////////////////////////////////////////
 //Functions implementation
 
-function _lookAt(eye_pos, eye_center, eye_up) {
+function _lookAt(/*vec3*/eye_pos, /*vec3*/eye_center, /*vec3*/eye_up) {
     let gaze = eye_center.sub(eye_pos).mul(-1),
         frame = create_reference_frame(gaze, eye_up),
         minus_eye_pos = eye_pos.mul(-1),
@@ -20,32 +20,58 @@ function _lookAt(eye_pos, eye_center, eye_up) {
     return frame.mul(translate_mat);
 }
 
-function _rotate_axis(invec, axis, degrees) {
-    //rodriguez, NON quaterion stuff
-    let P = invec,
+/**
+ * Rotates the invec_point about the arbitrary given <axis> for the amount given by <degrees>.
+ * This rotation is implemented by creating a reference frame whose "z" axis is the "axis" vector and the "t" axis is 
+ * a non-collinear vector dynamically computed by the function. 
+ * See "Fundamentals of Computer Graphics" by Marschner & Shirley
+ * @param {*} axis the axis to rotate about. It's a vec3
+ * @param {*} degrees the amount to rotate, in degrees
+ * @param {*} invec_point [optional] the input point to rotate. It should be a vec3
+ * @returns if invec_point !== null, a vec3 which is the result of the computation, otherwise the rotation matrix
+ */
+function _rotate_axis(/*vec3*/axis, degrees, /*vec3*/invec_point) {
+    let P = invec_point,
         A = axis,
-        ID = glm.mat4(1),
+        T = axis.clone(),
         theta = glm.radians(degrees),
         cos_theta = Math.cos(theta),
         sin_theta = Math.sin(theta),
-        one_minus_cos_theta = 1 - cos_theta;
+        change_vec_to_1 = (vec) => {
+            let found = false;
+            return [{
+                axis: 'x',
+                others: ['y', 'z']
+            }, {
+                axis: 'y',
+                others: ['x', 'z']
+            }, {
+                axis: 'z',
+                others: ['x', 'y']
+            }].reduce((v, o) => {
+                if (!found && o.others.every(oth_axis => v[o.axis] <= v[oth_axis])) {
+                    found = true;
+                    v[o.axis] = 1.;
+                }
+                return v;
+            }, vec);
+        };
 
-    return (
-        ID.mul(P.mul(cos_theta)).add(
-            glm.mat4(
-                0, A.z, -A.y, 0,
-                -A.z, 0, A.x, 0,
-                A.y, -A.x, 0, 0,
-                0, 0, 0, 1
-            ).mul(P.mul(sin_theta)).add(
-                glm.mat4(
-                    A.x * A.x, A.x * A.y, A.x * A.z, 0,
-                    A.x * A.y, A.y * A.y, A.y * A.z, 0,
-                    A.x * A.z, A.y * A.z, A.z * A.x, 1
-                ).mul(P.mul(one_minus_cos_theta))
-            )
-        )
-    );
+    T = change_vec_to_1(T); //create a non collinear vector T wrt A
+
+    let REF_M = _create_reference_frame(A, T),  //mat4
+        ROT_Z_M = glm.mat4(
+            cos_theta, sin_theta, 0, 0,
+            -sin_theta, cos_theta, 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1
+        ),
+        REF_M_inv = glm.inverse(REF_M),
+        M = REF_M_inv.mul(
+            ROT_Z_M.mul(REF_M)
+        );
+
+        return P ? (M.mul(glm.vec4(P, 1))).xyz : M;
 }
 
 function _rotate(amount_vec3, invec) {
@@ -103,9 +129,9 @@ function _scale(amount_vec3, invec) {
     return invec ? s_mat.mul(invec) : s_mat;
 }
 
-function _create_reference_frame(eye_dir, up_vec) {
+function _create_reference_frame(w_dir, up_vec) {
     const ////////////
-        w = glm.normalize(eye_dir),
+        w = glm.normalize(w_dir),
         u = glm.normalize(glm.cross(up_vec, w)),
         v = glm.cross(w, u);
 
