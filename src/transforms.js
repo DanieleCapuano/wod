@@ -117,16 +117,29 @@ function _create_reference_frame(eye_dir, up_vec) {
     );
 }
 
+/* 
+   We want the output of the MVP transform to be into the "viewving volume", which is generally defined
+   as [-1, 1]^3. But if you check the actual output from the perspective projection they're not within [-1, 1].
 
+   BUT see https://www.khronos.org/opengl/wiki/Vertex_Post-Processing
+
+   The viewing volume for a vertex is defined by (with vertex point defined as [P_x, P_y, P_z, P_w]):
+   -P_w <= P_x <= P_w
+   -P_w <= P_y <= P_w
+   -P_w <= P_z <= P_w
+
+   All P_x, P_y and P_z coords will be divided by P_w in the perspective divide stage, so the actual
+   range before the viewport transform will be [-1, 1]^3
+*/
 function _perspective(fov_y, aspect_ratio, near, far) {
     const ////////////////// 
         half_theta = glm.radians(fov_y) / 2,
         tan_fov = Math.tan(half_theta),
         n = Math.abs(near),
         f = Math.abs(far),
-        t = tan_fov * Math.abs(near),   //t = "top". This works if cos(half_theta) = near and sin(half_theta) = top ==> triangle's hypotenuse = 1
+        t = tan_fov * n,                //t = "top". This works because sin(half_theta) = t / hyp and cos(half_theta) = n / hyp ==> tan(half_theta) = (t / hyp) / (n / hyp) = t / n
         b = -t,                         //b = "bottom"
-        r = aspect_ratio * t,           //(w / h = r / t) ==> because pixels are assumed to be squared
+        r = aspect_ratio * t,           //aspect_ratio = w / h and we can see that (w / h = r / t) ==> because pixels are assumed to be squared
         l = -r;
 
     return glm.mat4(
