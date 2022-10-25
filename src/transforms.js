@@ -144,7 +144,7 @@ function _create_reference_frame(w_dir, up_vec) {
 }
 
 /* 
-   We want the output of the MVP transform to be into the "viewving volume", which is generally defined
+   We want the output of the MVP transform to be into the "viewing volume", which is generally defined
    as [-1, 1]^3. But if you check the actual output from the perspective projection they're not within [-1, 1].
 
    BUT see https://www.khronos.org/opengl/wiki/Vertex_Post-Processing
