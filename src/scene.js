@@ -8,7 +8,7 @@ import { draw_objects, init_scene_webgl, run_program, stop_program } from "./web
  * for what concerns the objects and scene structures and math operations
  * it creates vectors and matrices to be passed to the webgl_scene
  */
-const DEBUG = true;
+const DEBUG = false;
 
 export const init_scene = _init_scene;
 export const run_scene = _run;
