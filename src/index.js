@@ -18,3 +18,12 @@ export {
     Transforms,
     WebGLUtils
 };
+
+export default {
+    init_data,
+    init_scene,
+    run_scene,
+    stop_scene,
+    Transforms,
+    WebGLUtils
+};

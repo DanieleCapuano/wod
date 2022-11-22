@@ -7,8 +7,7 @@ module.exports = [{
   output: {
     filename: "od.js",
     library: 'od',
-    libraryTarget: 'umd',
-    libraryExport: "od"
+    libraryTarget: 'umd'
   },
   watchOptions: {
     ignored: 'node_modules/**',
