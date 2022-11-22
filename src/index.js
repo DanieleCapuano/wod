@@ -1,7 +1,7 @@
-import { init_scene, run_scene, stop_scene } from "./src/scene";
-import { init_data } from "./src/data";
-import * as Transforms from "./src/transforms";
-import * as WebGLUtils from './src/webgl_utils';
+import { init_scene, run_scene, stop_scene } from "./scene";
+import { init_data } from "./data";
+import * as Transforms from "./transforms";
+import * as WebGLUtils from './webgl_utils';
 
 /**
  * od : Objects Drawer: a simple drawer with WebGL 2

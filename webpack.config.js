@@ -3,7 +3,7 @@ const path = require('path');
 module.exports = [{
   mode: 'development',
   target: 'web',
-  entry: './index.js',
+  entry: './src/index.js',
   output: {
     filename: "od.js",
     library: 'od',

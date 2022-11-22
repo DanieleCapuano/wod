@@ -1,10 +1,7 @@
 {
   "name": "od",
   "version": "1.0.0",
-  "main": "index.js",
-  "files": [
-    "dist", "src"
-  ],
+  "main": "dist/od.js",
   "scripts": {
     "build": "rimraf dist && webpack --config webpack.config.js",
     "build-watch": "rimraf dist && webpack -w --config webpack.config.js",

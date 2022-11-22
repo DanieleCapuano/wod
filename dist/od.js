@@ -19,17 +19,6 @@
 return /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
-/***/ "./index.js":
-/*!******************!*\
-  !*** ./index.js ***!
-  \******************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpack_require__.d(__webpack_exports__, {\n/* harmony export */   \"Transforms\": () => (/* reexport module object */ _src_transforms__WEBPACK_IMPORTED_MODULE_2__),\n/* harmony export */   \"WebGLUtils\": () => (/* reexport module object */ _src_webgl_utils__WEBPACK_IMPORTED_MODULE_3__),\n/* harmony export */   \"init_data\": () => (/* reexport safe */ _src_data__WEBPACK_IMPORTED_MODULE_1__.init_data),\n/* harmony export */   \"init_scene\": () => (/* reexport safe */ _src_scene__WEBPACK_IMPORTED_MODULE_0__.init_scene),\n/* harmony export */   \"run_scene\": () => (/* reexport safe */ _src_scene__WEBPACK_IMPORTED_MODULE_0__.run_scene),\n/* harmony export */   \"stop_scene\": () => (/* reexport safe */ _src_scene__WEBPACK_IMPORTED_MODULE_0__.stop_scene)\n/* harmony export */ });\n/* harmony import */ var _src_scene__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./src/scene */ \"./src/scene.js\");\n/* harmony import */ var _src_data__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./src/data */ \"./src/data.js\");\n/* harmony import */ var _src_transforms__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./src/transforms */ \"./src/transforms.js\");\n/* harmony import */ var _src_webgl_utils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./src/webgl_utils */ \"./src/webgl_utils.js\");\n\r\n\r\n\r\n\r\n\r\n/**\r\n * od : Objects Drawer: a simple drawer with WebGL 2\r\n */\r\n\r\n// export const od = {\r\n//     init_data, init_scene, run_scene, stop_scene\r\n// };\r\n\n\n//# sourceURL=webpack://od/./index.js?");
-
-/***/ }),
-
 /***/ "./node_modules/glm-js/build/glm-js.min.js":
 /*!*************************************************!*\
   !*** ./node_modules/glm-js/build/glm-js.min.js ***!
@@ -48,6 +37,17 @@ eval("/*! glm-js built 2017-04-02 11:34:38-04:00 | (c) humbletim | http://humble
 
 "use strict";
 eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpack_require__.d(__webpack_exports__, {\n/* harmony export */   \"init_data\": () => (/* binding */ init_data)\n/* harmony export */ });\nconst init_data = _init_data;\r\n\r\n\r\nfunction _init_data(data) {\r\n    return new Promise((res, err) => {\r\n        data = data || {};\r\n        if (!data.objects_desc_url || !data.scene_desc_url) return err();\r\n        Promise.all([\r\n            _get_url(data.objects_desc_url),\r\n            _get_url(data.scene_desc_url)\r\n        ]).then((json_files) => {\r\n            let objects = json_files[0];\r\n            Promise.all(Object.keys(objects)\r\n                .map((obj_key) => _get_url(objects[obj_key]))\r\n            )\r\n                .then((objects_jsons) => {\r\n                    Promise.all(\r\n                        Object.keys(objects_jsons)\r\n                            .map((obj_key) => {\r\n                                let program_shaders = objects_jsons[obj_key].program_info_def.shaders;\r\n                                return [\r\n                                    _get_url(program_shaders.vertex.url, 'text'),\r\n                                    _get_url(program_shaders.fragment.url, 'text')\r\n                                ];\r\n                            })\r\n                            .flat()\r\n                    ).then((shaders_code_arr) => {\r\n                        let arr_i = 0;\r\n                        objects_jsons.forEach((o) => {\r\n                            const ////////////\r\n                                { program_info_def } = o,\r\n                                { shaders } = program_info_def;\r\n                            shaders.vertex.code = shaders_code_arr[arr_i];\r\n                            shaders.fragment.code = shaders_code_arr[arr_i + 1];\r\n                            arr_i += 2;\r\n                        });\r\n\r\n                        res({\r\n                            scene_desc: json_files[1],\r\n                            objects_desc: objects_jsons\r\n                        });\r\n                    })\r\n\r\n                })\r\n        });\r\n    });\r\n}\r\n\r\nfunction _get_url(url, type) {\r\n    return fetch(url).then(o => o[type || 'json']());\r\n}\n\n//# sourceURL=webpack://od/./src/data.js?");
+
+/***/ }),
+
+/***/ "./src/index.js":
+/*!**********************!*\
+  !*** ./src/index.js ***!
+  \**********************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpack_require__.d(__webpack_exports__, {\n/* harmony export */   \"Transforms\": () => (/* reexport module object */ _transforms__WEBPACK_IMPORTED_MODULE_2__),\n/* harmony export */   \"WebGLUtils\": () => (/* reexport module object */ _webgl_utils__WEBPACK_IMPORTED_MODULE_3__),\n/* harmony export */   \"init_data\": () => (/* reexport safe */ _data__WEBPACK_IMPORTED_MODULE_1__.init_data),\n/* harmony export */   \"init_scene\": () => (/* reexport safe */ _scene__WEBPACK_IMPORTED_MODULE_0__.init_scene),\n/* harmony export */   \"run_scene\": () => (/* reexport safe */ _scene__WEBPACK_IMPORTED_MODULE_0__.run_scene),\n/* harmony export */   \"stop_scene\": () => (/* reexport safe */ _scene__WEBPACK_IMPORTED_MODULE_0__.stop_scene)\n/* harmony export */ });\n/* harmony import */ var _scene__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./scene */ \"./src/scene.js\");\n/* harmony import */ var _data__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./data */ \"./src/data.js\");\n/* harmony import */ var _transforms__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./transforms */ \"./src/transforms.js\");\n/* harmony import */ var _webgl_utils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./webgl_utils */ \"./src/webgl_utils.js\");\n\r\n\r\n\r\n\r\n\r\n/**\r\n * od : Objects Drawer: a simple drawer with WebGL 2\r\n */\r\n\r\n// export const od = {\r\n//     init_data, init_scene, run_scene, stop_scene\r\n// };\r\n\n\n//# sourceURL=webpack://od/./src/index.js?");
 
 /***/ }),
 
@@ -179,7 +179,7 @@ eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpac
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module can't be inlined because the eval devtool is used.
-/******/ 	var __webpack_exports__ = __webpack_require__("./index.js");
+/******/ 	var __webpack_exports__ = __webpack_require__("./src/index.js");
 /******/ 	__webpack_exports__ = __webpack_exports__.od;
 /******/ 	
 /******/ 	return __webpack_exports__;
