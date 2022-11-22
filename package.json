@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "files": [
-    "dist"
+    "dist", "src"
   ],
   "scripts": {
     "build": "rimraf dist && webpack --config webpack.config.js",
