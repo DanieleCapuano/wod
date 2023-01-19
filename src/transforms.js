@@ -168,10 +168,28 @@ function _perspective(fov_y, aspect_ratio, near, far) {
         r = aspect_ratio * t,           //aspect_ratio = w / h and we can see that (w / h = r / t) ==> because pixels are assumed to be squared
         l = -r;
 
-    return glm.mat4(
-        (2 * n) / (r - l), 0, 0, 0,
-        0, (2 * n) / (t - b), 0, 0,
-        (l + r) / (r - l), (b + t) / (t - b), (f + n) / (n - f), -1,
-        0, 0, (2 * f * n) / (n - f), 0
-    );
+    let ///////////////////////
+        //M_ortho maps [[l, r], [b, t], [-n, -f]] ==> [-1, 1]^3
+        M_ortho = glm.mat4(
+            2 / (r - l),                        0,                       0,                     0,
+            0,                                2 / (t - b),               0,                     0,
+            0,                                  0,                     2 / (n - f),             0,
+            (-(r + l)) / (r - l),    (-(t + b)) / (t - b),       (n + f) / (n - f),             1
+        ),
+        //M_persp implements perspective projection. Note that it maps [-n, -f] to [-n, -f] after a perspective divide of -z (MINUS ZETA!!!)
+        M_persp = glm.mat4(
+            n,                                   0,                      0,                     0,
+            0,                                   n,                      0,                     0,
+            0,                                   0,                    n + f,                  -1,
+            0,                                   0,                    n * f,                   0
+        );
+
+    //SAME AS DOING 
+    //return glm.mat4(
+    //     (2 * n) / (r - l), 0, 0, 0,
+    //     0, (2 * n) / (t - b), 0, 0,
+    //     (l + r) / (r - l), (b + t) / (t - b), (f + n) / (n - f), -1,
+    //     0, 0, (2 * f * n) / (n - f), 0
+    // );
+    return M_persp.mul(M_ortho);
 }
