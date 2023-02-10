@@ -21,8 +21,17 @@
                     "opts": {
                         "data_type": "FLOAT",
                         "normalized": false,
-                        "stride": 0,
+                        "stride": 24,
                         "offset": 0
+                    }
+                },
+                "a_normal": {
+                    "name": "a_normal",
+                    "opts": {
+                        "data_type": "FLOAT",
+                        "normalized": false,
+                        "stride": 24,
+                        "offset": 12
                     }
                 }
             },

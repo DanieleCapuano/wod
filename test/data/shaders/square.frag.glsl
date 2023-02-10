@@ -4,6 +4,7 @@ precision mediump float;
 
 uniform float u_time;
 
+in vec4 normal;
 out vec4 outColor;
 
 void main() {

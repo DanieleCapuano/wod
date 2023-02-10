@@ -101,20 +101,10 @@ function _init_scene_struct(objects, scene_desc) {
 
 function _compute_objects_coords(objects, scene_desc) {
     return objects.map((obj_def) => {
-        const { coords_dim, coordinates_def } = obj_def;
         return Object.assign(obj_def, {
             ////////////////////
-            //Coordinates put in a single Float32Array
-            coords: coordinates_def
-                .reduce((ab, coord_buf, i) => {
-                    let icurr = i * coords_dim,
-                        k = 0;
-                    for (let j = icurr; j < icurr + coords_dim; j++) {
-                        ab[j] = coord_buf[k];
-                        k++;
-                    }
-                    return ab;
-                }, new Float32Array(coordinates_def.length * coords_dim)),
+            //Coordinates and normals put in a single Float32Array
+            coords_and_normals: _compute_coords_and_normals(obj_def),
 
             ////////////////////
             //model transform computed multiplying up all the transformations in the object description file
@@ -131,6 +121,52 @@ function _compute_objects_coords(objects, scene_desc) {
                 }, glm.mat4(1))
         })
     });
+}
+
+function _compute_coords_and_normals(obj_def) {
+    const { coords_dim, coordinates_def } = obj_def;
+
+    //IF we're using 3D
+    //for each coord (which has x,y,z) we'll have "coords_dim" values more (i.e. 1 normal vec coords)
+    //EXAMPLE 
+    //coords_dim = 3 
+    //coords = [p1x, p1y, p1z, p2x, p2y, p2z] (two points)
+    //out = [
+    //    p1x, p1y, p1z, norm_p1_x, norm_p1_y, norm_p1_z, 
+    //    p2x, p2y, p2z, norm_p2_x, norm_p2_y, norm_p2_z
+    //]
+    const is_3d = coords_dim === 3,
+          fa_len = coords_dim * (is_3d ? 2 : 1);
+          
+
+    return coordinates_def
+        .reduce((ab, coord_buf, i) => {
+            let icurr = i * (coords_dim * (is_3d ? 2 : 1)),
+                n = is_3d ? _normal(coordinates_def, i) : null,
+                k = 0,
+                j = icurr;
+
+            for (j = icurr; j < icurr + coords_dim; j++) {
+                ab[j] = coord_buf[k];
+                k++;
+            }
+
+            if (n) {
+                ab[j] = n[0];
+                ab[j + 1] = n[1];
+                ab[j + 2] = n[2];
+            }
+
+            return ab;
+        }, new Float32Array(coordinates_def.length * fa_len))
+}
+
+function _normal(coords, i) {
+    let ip1 = i + 1,
+        a = ip1 === coords.length ? coords[i] : coords[ip1],
+        b = ip1 === coords.length ? coords[i - 1] : coords[i];
+
+    return glm.cross(glm.vec3(a), glm.vec3(b));
 }
 
 //this is put in a separate function because it's computed at each animation frame
@@ -167,7 +203,7 @@ function _print_debug(OI) {
 
         let //////////////////////////////////
             a = [],
-            coords = obj.coords,
+            coords = obj.coords_and_normals,
             j = 0,
             f32a = new Float32Array(coords.length * (obj.coords_dim + 1)); //obj.coords_dim + 1 because we're sending homogeneous coordinates to the GPU
 
