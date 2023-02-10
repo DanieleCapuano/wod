@@ -191,5 +191,5 @@ function _perspective(fov_y, aspect_ratio, near, far) {
     //     (l + r) / (r - l), (b + t) / (t - b), (f + n) / (n - f), -1,
     //     0, 0, (2 * f * n) / (n - f), 0
     // );
-    return M_persp.mul(M_ortho);
+    return M_ortho.mul(M_persp);
 }

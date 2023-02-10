@@ -8,7 +8,10 @@ import { draw_objects, init_scene_webgl, run_program, stop_program } from "./web
  * for what concerns the objects and scene structures and math operations
  * it creates vectors and matrices to be passed to the webgl_scene
  */
-const DEBUG = false;
+const DEBUG = {
+    print: false,
+    interactions: true
+};
 
 export const init_scene = _init_scene;
 export const run_scene = _run;
@@ -38,7 +41,7 @@ function _init_scene(in_canvas, desc) {
     scene_description = scene_desc;
     objects_info = _init_scene_struct(objects_descriptions, scene_description);
 
-    DEBUG && _listen_to_keys();
+    DEBUG.interactions && _listen_to_keys();
 
     return {
         webgl_scene: init_scene_webgl(gl, objects_info),
@@ -81,7 +84,7 @@ function _listen_to_keys() {
                 camera_rot_y -= rot_amount;
                 break;
         }
-        DEBUG && console.info("ROT", camera_rot_x, camera_rot_y);
+        DEBUG.print && console.info("ROT", camera_rot_x, camera_rot_y);
     });
 }
 
@@ -94,27 +97,17 @@ function _init_scene_struct(objects, scene_desc) {
         projection_matrix: T.perspective(90, canvas.width / canvas.height, .1, 99)
     }
 
-    DEBUG && _print_debug(OI);
+    DEBUG.print && _print_debug(OI);
 
     return OI;
 }
 
 function _compute_objects_coords(objects, scene_desc) {
     return objects.map((obj_def) => {
-        const { coords_dim, coordinates_def } = obj_def;
         return Object.assign(obj_def, {
             ////////////////////
-            //Coordinates put in a single Float32Array
-            coords: coordinates_def
-                .reduce((ab, coord_buf, i) => {
-                    let icurr = i * coords_dim,
-                        k = 0;
-                    for (let j = icurr; j < icurr + coords_dim; j++) {
-                        ab[j] = coord_buf[k];
-                        k++;
-                    }
-                    return ab;
-                }, new Float32Array(coordinates_def.length * coords_dim)),
+            //Coordinates and normals put in a single Float32Array
+            coords: _compute_coords_and_normals(obj_def),
 
             ////////////////////
             //model transform computed multiplying up all the transformations in the object description file
@@ -131,6 +124,54 @@ function _compute_objects_coords(objects, scene_desc) {
                 }, glm.mat4(1))
         })
     });
+}
+
+function _compute_coords_and_normals(obj_def) {
+    const { coords_dim, coordinates_def } = obj_def;
+
+    //IF we're using 3D and there's some attribute defined to contain "normals" (is_normals: true) then:
+    //
+    //for each coord (which has x,y,z) we'll have "coords_dim" values more (i.e. 1 normal vec coords)
+    //EXAMPLE 
+    //coords_dim = 3 
+    //coords = [p1x, p1y, p1z, p2x, p2y, p2z] (two points)
+    //out = [
+    //    p1x, p1y, p1z, norm_p1_x, norm_p1_y, norm_p1_z, 
+    //    p2x, p2y, p2z, norm_p2_x, norm_p2_y, norm_p2_z
+    //]
+    const { attributes } = obj_def.program_info_def.shaders_data,
+        has_normals = coords_dim === 3 && Object.keys(attributes).find(attr_key => attributes[attr_key].is_normals) !== undefined,
+        fa_len = coords_dim * (has_normals ? 2 : 1);
+
+
+    return coordinates_def
+        .reduce((ab, coord_buf, i) => {
+            let icurr = i * (coords_dim * (has_normals ? 2 : 1)),
+                n = has_normals ? _normal(coordinates_def, i) : null,
+                k = 0,
+                j = icurr;
+
+            for (j = icurr; j < icurr + coords_dim; j++) {
+                ab[j] = coord_buf[k];
+                k++;
+            }
+
+            if (n) {
+                ab[j] = n[0];
+                ab[j + 1] = n[1];
+                ab[j + 2] = n[2];
+            }
+
+            return ab;
+        }, new Float32Array(coordinates_def.length * fa_len))
+}
+
+function _normal(coords, i) {
+    let ip1 = i + 1,
+        a = ip1 === coords.length ? coords[i] : coords[ip1],
+        b = ip1 === coords.length ? coords[i - 1] : coords[i];
+
+    return glm.cross(glm.vec3(a), glm.vec3(b));
 }
 
 //this is put in a separate function because it's computed at each animation frame

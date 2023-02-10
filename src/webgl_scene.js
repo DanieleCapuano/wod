@@ -46,7 +46,7 @@ function _init_scene_webgl(gl, objects_info) {
             .filter(attr_key => pi.attributes[attr_key].is_position)
             .forEach((attr_name) => {
                 buffer_data(gl, {
-                    [attr_name]: oi.coords
+                    [attr_name]: oi.coords  //it contains normals as well
                 }, pi);
             });
 
