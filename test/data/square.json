@@ -27,6 +27,7 @@
                 },
                 "a_normal": {
                     "name": "a_normal",
+                    "is_normals": true,
                     "opts": {
                         "data_type": "FLOAT",
                         "normalized": false,
