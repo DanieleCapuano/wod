@@ -82,7 +82,8 @@ function _draw_objects(gl, objects_info, time) {
 
         set_uniforms(gl, {
             u_time: time || 0,
-            u_modelview: obj.model_view_matrix.elements,
+            u_model: obj.model_matrix.elements,
+            u_view: objects_info.view_matrix.elements,
             u_projection: objects_info.projection_matrix.elements
         }, prog_info);
 

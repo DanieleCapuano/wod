@@ -9,6 +9,7 @@ import { draw_objects, init_scene_webgl, run_program, stop_program } from "./web
  * it creates vectors and matrices to be passed to the webgl_scene
  */
 const DEBUG = {
+    print_coords: false,
     print: false,
     interactions: true
 };
@@ -56,7 +57,11 @@ function _run() {
 
 function _do_run(time) {
     if (program_running) requestAnimationFrame(_do_run);
-    objects_info.objects_to_draw = _compute_modelview(objects_info.objects_to_draw, scene_description);
+    const { objects, Mlookat } = _compute_modelview(objects_info.objects_to_draw, scene_description);
+    
+    objects_info.objects_to_draw = objects;
+    objects_info.view_matrix = Mlookat;
+
     draw_objects(gl, objects_info, time || 0);
 }
 
@@ -89,15 +94,16 @@ function _listen_to_keys() {
 }
 
 
-function _init_scene_struct(objects, scene_desc) {
-    let obj_list = _compute_modelview(_compute_objects_coords(objects, scene_desc), scene_desc);
+function _init_scene_struct(objs_list, scene_desc) {
+    let { objects, Mlookat } = _compute_modelview(_compute_objects_coords(objs_list, scene_desc), scene_desc);
 
     const OI = {
-        objects_to_draw: obj_list,
-        projection_matrix: T.perspective(90, canvas.width / canvas.height, .1, 99)
+        objects_to_draw: objects,
+        projection_matrix: T.perspective(90, canvas.width / canvas.height, .1, 99),
+        view_matrix: Mlookat
     }
 
-    DEBUG.print && _print_debug(OI);
+    DEBUG.print_coords && _print_debug(OI);
 
     return OI;
 }
@@ -189,8 +195,14 @@ function _compute_modelview(objects, scene_desc) {
     C_up = T.rotate_axis(glm.vec3(1, 0, 0), camera_rot_x, C_up);
     Mlookat = T.lookAt(C_pos.xyz, glm.vec3(C.center), C_up);
 
-    objects.forEach((obj_def) => obj_def.model_view_matrix = Mlookat.mul(obj_def.model_matrix));
-    return objects;
+    objects.forEach((obj_def) => {
+        obj_def.model_view_matrix = Mlookat.mul(obj_def.model_matrix);
+    });
+
+    return {
+        objects,
+        Mlookat
+    };
 }
 
 //this prints the final results of the graphics pipeline computation, i.e. what arrives to the fragment shader
