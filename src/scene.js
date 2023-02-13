@@ -58,7 +58,7 @@ function _run() {
 function _do_run(time) {
     if (program_running) requestAnimationFrame(_do_run);
     const { objects, Mlookat } = _compute_modelview(objects_info.objects_to_draw, scene_description);
-    
+
     objects_info.objects_to_draw = objects;
     objects_info.view_matrix = Mlookat;
 
@@ -95,12 +95,13 @@ function _listen_to_keys() {
 
 
 function _init_scene_struct(objs_list, scene_desc) {
-    let { objects, Mlookat } = _compute_modelview(_compute_objects_coords(objs_list, scene_desc), scene_desc);
+    let { objects, Mlookat, lighting } = _compute_modelview(_compute_objects_coords(objs_list, scene_desc), scene_desc);
 
     const OI = {
         objects_to_draw: objects,
         projection_matrix: T.perspective(90, canvas.width / canvas.height, .1, 99),
-        view_matrix: Mlookat
+        view_matrix: Mlookat,
+        lighting
     }
 
     DEBUG.print_coords && _print_debug(OI);
@@ -150,29 +151,48 @@ function _compute_coords_and_normals(obj_def) {
         fa_len = coords_dim * (has_normals ? 2 : 1);
 
 
-    return coordinates_def
-        .reduce((ab, coord_buf, i) => {
+    let data = coordinates_def
+        .reduce((o, coord_buf, i, coords_a) => {
+            if (i > 0 && i % coords_dim === 0) {
+                o.normal = null;
+            }
+
             let icurr = i * (coords_dim * (has_normals ? 2 : 1)),
-                n = has_normals ? _normal(coordinates_def, i) : null,
+                n = has_normals ? (o.normal || _normal(coords_a.slice(i, i + coords_dim))) : null,
                 k = 0,
                 j = icurr;
 
             for (j = icurr; j < icurr + coords_dim; j++) {
-                ab[j] = coord_buf[k];
+                o.ab[j] = coord_buf[k];
                 k++;
             }
 
             if (n) {
-                ab[j] = n[0];
-                ab[j + 1] = n[1];
-                ab[j + 2] = n[2];
+                o.ab[j] = n[0];
+                o.ab[j + 1] = n[1];
+                o.ab[j + 2] = n[2];
+                
+                o.normal = n;
             }
 
-            return ab;
-        }, new Float32Array(coordinates_def.length * fa_len))
+            return o;
+        }, {
+            ab: new Float32Array(coordinates_def.length * fa_len),
+            normal: null
+        });
+
+    return data.ab;
 }
 
-function _normal(coords, i) {
+function _normal(triangle_vertices) {
+    let a = glm.vec3(triangle_vertices[0]),
+        b = glm.vec3(triangle_vertices[1]),
+        c = glm.vec3(triangle_vertices[2]);
+
+    return glm.cross(b.sub(a), c.sub(a));
+}
+
+function _normal_old(coords, i) {
     let ip1 = i + 1,
         a = ip1 === coords.length ? coords[i] : coords[ip1],
         b = ip1 === coords.length ? coords[i - 1] : coords[i];
@@ -184,7 +204,6 @@ function _normal(coords, i) {
 function _compute_modelview(objects, scene_desc) {
     const C = scene_desc.camera;
     let C_pos = glm.vec3(1),
-        C_up = glm.vec3(C.up),
         Mlookat = glm.mat4(1);
 
     let M_r = T.rotate_axis(glm.vec3(1, 0, 0), camera_rot_x).mul(
@@ -192,16 +211,24 @@ function _compute_modelview(objects, scene_desc) {
     );
 
     C_pos = M_r.mul(glm.vec4(C.position.concat(1)));
-    C_up = T.rotate_axis(glm.vec3(1, 0, 0), camera_rot_x, C_up);
-    Mlookat = T.lookAt(C_pos.xyz, glm.vec3(C.center), C_up);
+    // C_up = T.rotate_axis(glm.vec3(1, 0, 0), camera_rot_x, C_up);
+    let C_up = M_r.mul(glm.vec4(C.up.concat(0)));
+    Mlookat = T.lookAt(C_pos.xyz, glm.vec3(C.center), glm.vec3(C_up.x, C_up.y, C_up.z));
 
     objects.forEach((obj_def) => {
         obj_def.model_view_matrix = Mlookat.mul(obj_def.model_matrix);
     });
 
+    const { lighting } = scene_desc;
+    lighting.light_positions = lighting.lights.reduce((poss, l) => poss.concat(l.position), []);
+    lighting.light_colors = lighting.lights.reduce((cols, l) => cols.concat(l.color), []);
+    lighting.light_intensities = lighting.lights.reduce((ints, l) => ints.concat(l.intensity), []);
+    lighting.light_specular_exp = lighting.lights.reduce((exps, l) => exps.concat(l.specular_exp), []);
+
     return {
         objects,
-        Mlookat
+        Mlookat,
+        lighting
     };
 }
 

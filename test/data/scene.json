@@ -16,6 +16,33 @@
             0
         ]
     },
+    "lighting": {
+        "ambient": {
+            "color": [
+                0.2,
+                0.3,
+                0.3
+            ],
+            "intensity": 0.8
+        },
+        "lights": [
+            {
+                "type": "point",
+                "intensity": 0.8,
+                "specular_exp": 12,
+                "position": [
+                    0,
+                    0,
+                    20
+                ],
+                "color": [
+                    0.9,
+                    0.4,
+                    0.4
+                ]
+            }
+        ]
+    },
     "square_1": {
         "transforms": [
             {

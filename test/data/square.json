@@ -4,6 +4,11 @@
     "number_of_points": 24,
     "primitive": "TRIANGLES",
     "coords_dim": 3,
+    "material": {
+        "ka": 0.8,
+        "kd": 0.8,
+        "ks": 0.9
+    },
     "program_info_def": {
         "shaders": {
             "vertex": {
@@ -59,6 +64,60 @@
                     "name": "u_projection",
                     "opts": {
                         "fn": "Matrix4fv"
+                    }
+                },
+                "u_ka": {
+                    "name": "u_ka",
+                    "opts": {
+                        "fn": "1f"
+                    }
+                },
+                "u_kd": {
+                    "name": "u_kd",
+                    "opts": {
+                        "fn": "1f"
+                    }
+                },
+                "u_ks": {
+                    "name": "u_ks",
+                    "opts": {
+                        "fn": "1f"
+                    }
+                },
+                "u_ambient_color": {
+                    "name": "u_ambient_color",
+                    "opts": {
+                        "fn": "3fv"
+                    }
+                },
+                "u_ambient_intensity": {
+                    "name": "u_ambient_intensity",
+                    "opts": {
+                        "fn": "1f"
+                    }
+                },
+                "u_light_positions": {
+                    "name": "u_light_positions",
+                    "opts": {
+                        "fn": "3fv"
+                    }
+                },
+                "u_light_colors": {
+                    "name": "u_light_colors",
+                    "opts": {
+                        "fn": "3fv"
+                    }
+                },
+                "u_light_intensities": {
+                    "name": "u_light_intensities",
+                    "opts": {
+                        "fn": "1fv"
+                    }
+                },
+                "u_light_specular_exp": {
+                    "name": "u_light_specular_exp",
+                    "opts": {
+                        "fn": "1fv"
                     }
                 }
             }

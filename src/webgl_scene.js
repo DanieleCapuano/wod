@@ -69,6 +69,7 @@ function _init_scene_webgl(gl, objects_info) {
 function _draw_objects(gl, objects_info, time) {
     objects_info.run_callback && objects_info.run_callback(gl, objects_info, time);
 
+    const { lighting, view_matrix, projection_matrix } = objects_info;
     objects_info.objects_to_draw.forEach((obj) => {
         const prog_info = programs_info[obj.id],
             { number_of_points, primitive, program_info } = prog_info,
@@ -79,12 +80,22 @@ function _draw_objects(gl, objects_info, time) {
         gl.useProgram(program);
         gl.bindVertexArray(vao);
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+        gl.enable(gl.DEPTH_TEST);
 
         set_uniforms(gl, {
             u_time: time || 0,
             u_model: obj.model_matrix.elements,
-            u_view: objects_info.view_matrix.elements,
-            u_projection: objects_info.projection_matrix.elements
+            u_view: view_matrix.elements,
+            u_projection: projection_matrix.elements,
+            u_ka: obj.material.ka,
+            u_kd: obj.material.kd,
+            u_ks: obj.material.ks,
+            u_ambient_color: lighting.ambient.color,
+            u_ambient_intensity: lighting.ambient.intensity,
+            u_light_positions: lighting.light_positions,
+            u_light_colors: lighting.light_colors,
+            u_light_intensities: lighting.light_intensities,
+            u_light_specular_exp: lighting.light_specular_exp
         }, prog_info);
 
         if (prog_info.index_buffer) {
