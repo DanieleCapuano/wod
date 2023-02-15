@@ -28,12 +28,12 @@
         "lights": [
             {
                 "type": "point",
-                "intensity": 0.8,
-                "specular_exp": 12,
+                "intensity": 0.9,
+                "specular_exp": 302,
                 "position": [
+                    200.5,
                     0,
-                    0,
-                    20
+                    200
                 ],
                 "color": [
                     0.9,
