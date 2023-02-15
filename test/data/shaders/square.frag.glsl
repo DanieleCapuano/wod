@@ -1,6 +1,6 @@
 #version 300 es
 
-precision mediump float;
+precision highp float;
 
 uniform float u_time;
 
@@ -38,22 +38,16 @@ void main() {
     // vec3 view2pos = normalize(-view_pos.xyz / view_pos.w); //from viewer (i.e. camera) to current pos
     // mat4 M = u_view * u_model;
     
-    color += u_ka * u_ambient_intensity * u_ambient_color;
+    color += u_ka * u_ambient_color;
     for(int i = 0; i < MAX_LIGHTS_N; i ++ ) {
-        
-        // vec4 light_pos = (M * vec4(u_light_positions[i], 1.0));
-        // vec3 lpos = light_pos[i].xyz / light_pos[i].w;
-        // light_pos.xyz /= light_pos.w;
-        // color.r = light_pos[i].w != 1.0 ? -1.0 : light_pos[i].w;
-        
         vec3 l = normalize(light_dirs[i]);
         vec3 h = normalize(light_half_vects[i]);
         float I = u_light_intensities[i];
         vec3 Lc = u_light_colors[i];
         
         color += (
-                u_kd * I*max(0.0, dot(n, l)) * Lc +
-                u_ks * I*pow(max(0.0, dot(n, h)), u_light_specular_exp[i]) * Lc
+                u_kd * max(0.0, dot(n, l)) * Lc +
+                u_ks * pow(max(0.0, dot(n, h)), u_light_specular_exp[i]) * Lc
         );
         
     }

@@ -86,6 +86,7 @@ function _draw_objects(gl, objects_info, time) {
             u_time: time || 0,
             u_model: obj.model_matrix.elements,
             u_view: view_matrix.elements,
+            u_modelview: obj.model_view_matrix.elements,
             u_projection: projection_matrix.elements,
             u_ka: obj.material.ka,
             u_kd: obj.material.kd,

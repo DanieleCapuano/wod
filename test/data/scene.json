@@ -19,9 +19,9 @@
     "lighting": {
         "ambient": {
             "color": [
-                0.2,
-                0.3,
-                0.3
+                0.5,
+                0.5,
+                0.5
             ],
             "intensity": 0.8
         },
@@ -29,16 +29,31 @@
             {
                 "type": "point",
                 "intensity": 0.9,
-                "specular_exp": 302,
+                "specular_exp": 4,
                 "position": [
-                    200.5,
+                    10000.5,
                     0,
-                    200
+                    10
                 ],
                 "color": [
                     0.9,
                     0.4,
                     0.4
+                ]
+            },
+            {
+                "type": "point",
+                "intensity": 0.6,
+                "specular_exp": 30,
+                "position": [
+                    -100.5,
+                    -100,
+                    2
+                ],
+                "color": [
+                    0.2,
+                    0.3,
+                    0.9
                 ]
             }
         ]
@@ -48,9 +63,9 @@
             {
                 "type": "scale",
                 "amount": [
-                    1,
-                    1,
-                    1
+                    2.5,
+                    2.5,
+                    2.5
                 ]
             },
             {
@@ -58,14 +73,14 @@
                 "amount": [
                     0,
                     0,
-                    3
+                    0
                 ]
             },
             {
                 "type": "rotate",
                 "amount": [
-                    0,
-                    0,
+                    25,
+                    80,
                     0
                 ]
             }

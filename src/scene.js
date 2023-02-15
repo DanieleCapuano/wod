@@ -1,7 +1,8 @@
 import glm from "glm-js";
 import * as T from './transforms';
+import { auto_animation, listen_to_keys, get_params } from "./interactions";
 
-import { draw_objects, init_scene_webgl, run_program, stop_program } from "./webgl_scene";
+import { draw_objects, init_scene_webgl } from "./webgl_scene";
 
 /*********************************************************************
  * this module is responsible for the scene initialization
@@ -11,7 +12,8 @@ import { draw_objects, init_scene_webgl, run_program, stop_program } from "./web
 const DEBUG = {
     print_coords: false,
     print: false,
-    interactions: true
+    interactions: false,
+    animation: true
 };
 
 export const init_scene = _init_scene;
@@ -25,9 +27,6 @@ let ////////////////////////////////////////
     program_running = false,
     objects_descriptions = [],
     scene_description = {},
-    rot_amount = 1,
-    camera_rot_x = 0,
-    camera_rot_y = 0,
     objects_info = [];
 
 function _init_scene(in_canvas, desc) {
@@ -42,7 +41,8 @@ function _init_scene(in_canvas, desc) {
     scene_description = scene_desc;
     objects_info = _init_scene_struct(objects_descriptions, scene_description);
 
-    DEBUG.interactions && _listen_to_keys();
+    DEBUG.interactions && listen_to_keys();
+    DEBUG.animation && auto_animation();
 
     return {
         webgl_scene: init_scene_webgl(gl, objects_info),
@@ -69,33 +69,17 @@ function _stop() {
     program_running = false;
 }
 
-function _listen_to_keys() {
-    document.addEventListener('keydown', (e) => {
-        switch (e.key) {
-            case "Down": // IE/Edge specific value
-            case "ArrowDown":
-                camera_rot_x -= rot_amount;
-                break;
-            case "Up": // IE/Edge specific value
-            case "ArrowUp":
-                camera_rot_x += rot_amount;
-                break;
-            case "Left": // IE/Edge specific value
-            case "ArrowLeft":
-                camera_rot_y += rot_amount;
-                break;
-            case "Right": // IE/Edge specific value
-            case "ArrowRight":
-                camera_rot_y -= rot_amount;
-                break;
-        }
-        DEBUG.print && console.info("ROT", camera_rot_x, camera_rot_y);
-    });
-}
-
 
 function _init_scene_struct(objs_list, scene_desc) {
-    let { objects, Mlookat, lighting } = _compute_modelview(_compute_objects_coords(objs_list, scene_desc), scene_desc);
+    let { objects, Mlookat, lighting } = Object.assign(
+        _compute_modelview(
+            _compute_objects_coords(
+                objs_list,
+                scene_desc
+            ),
+            scene_desc),
+        _compute_ligthing(scene_desc)
+    );
 
     const OI = {
         objects_to_draw: objects,
@@ -118,17 +102,7 @@ function _compute_objects_coords(objects, scene_desc) {
 
             ////////////////////
             //model transform computed multiplying up all the transformations in the object description file
-            model_matrix: Object.keys(scene_desc)
-                .filter((scene_desc_key) => scene_desc_key === obj_def.id)
-                .map((scene_desc_key) => scene_desc[scene_desc_key].transforms || [])
-                .flat()
-                .reduce((M, transform_desc, i, arr) => {
-                    let transform_fn = T[transform_desc.type] || (() => glm.mat4(1));
-                    let M_ret = M.mul(transform_fn(glm.vec3(transform_desc.amount)));
-
-                    return M_ret;
-
-                }, glm.mat4(1))
+            model_matrix: _compute_model_matrix(obj_def.id, scene_desc)
         })
     });
 }
@@ -171,7 +145,7 @@ function _compute_coords_and_normals(obj_def) {
                 o.ab[j] = n[0];
                 o.ab[j + 1] = n[1];
                 o.ab[j + 2] = n[2];
-                
+
                 o.normal = n;
             }
 
@@ -192,44 +166,58 @@ function _normal(triangle_vertices) {
     return glm.cross(b.sub(a), c.sub(a));
 }
 
-function _normal_old(coords, i) {
-    let ip1 = i + 1,
-        a = ip1 === coords.length ? coords[i] : coords[ip1],
-        b = ip1 === coords.length ? coords[i - 1] : coords[i];
-
-    return glm.cross(glm.vec3(a), glm.vec3(b));
-}
 
 //this is put in a separate function because it's computed at each animation frame
 function _compute_modelview(objects, scene_desc) {
+    const { model_rot_x, model_rot_y } = get_params();
     const C = scene_desc.camera;
     let C_pos = glm.vec3(1),
         Mlookat = glm.mat4(1);
 
-    let M_r = T.rotate_axis(glm.vec3(1, 0, 0), camera_rot_x).mul(
-        T.rotate_axis(glm.vec3(0, 1, 0), camera_rot_y)
+    let M_r = T.rotate_axis(glm.vec3(1, 0, 0), model_rot_x).mul(
+        T.rotate_axis(glm.vec3(0, 1, 0), model_rot_y)
     );
 
-    C_pos = M_r.mul(glm.vec4(C.position.concat(1)));
-    // C_up = T.rotate_axis(glm.vec3(1, 0, 0), camera_rot_x, C_up);
-    let C_up = M_r.mul(glm.vec4(C.up.concat(0)));
+    // C_pos = M_r.mul(glm.vec4(C.position.concat(1)));
+    // let C_up = M_r.mul(glm.vec4(C.up.concat(0)));
+    C_pos = glm.vec4(C.position.concat(1.));
+    let C_up = glm.vec4(C.up.concat(0.));
+
     Mlookat = T.lookAt(C_pos.xyz, glm.vec3(C.center), glm.vec3(C_up.x, C_up.y, C_up.z));
 
     objects.forEach((obj_def) => {
+        obj_def.model_matrix = M_r.mul(_compute_model_matrix(obj_def.id, scene_desc));
         obj_def.model_view_matrix = Mlookat.mul(obj_def.model_matrix);
     });
 
+    return {
+        objects,
+        Mlookat
+    };
+}
+
+function _compute_model_matrix(obj_id, scene_desc) {
+    return Object.keys(scene_desc)
+        .filter((scene_desc_key) => scene_desc_key === obj_id)
+        .map((scene_desc_key) => scene_desc[scene_desc_key].transforms || [])
+        .flat()
+        .reduce((M, transform_desc, i, arr) => {
+            let transform_fn = T[transform_desc.type] || (() => glm.mat4(1));
+            let M_ret = M.mul(transform_fn(glm.vec3(transform_desc.amount)));
+
+            return M_ret;
+
+        }, glm.mat4(1))
+}
+
+function _compute_ligthing(scene_desc) {
     const { lighting } = scene_desc;
     lighting.light_positions = lighting.lights.reduce((poss, l) => poss.concat(l.position), []);
     lighting.light_colors = lighting.lights.reduce((cols, l) => cols.concat(l.color), []);
     lighting.light_intensities = lighting.lights.reduce((ints, l) => ints.concat(l.intensity), []);
     lighting.light_specular_exp = lighting.lights.reduce((exps, l) => exps.concat(l.specular_exp), []);
 
-    return {
-        objects,
-        Mlookat,
-        lighting
-    };
+    return { lighting };
 }
 
 //this prints the final results of the graphics pipeline computation, i.e. what arrives to the fragment shader
