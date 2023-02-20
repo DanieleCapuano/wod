@@ -72,6 +72,12 @@
                         "fn": "Matrix4fv"
                     }
                 },
+                "u_nlights": {
+                    "name": "u_nlights",
+                    "opts": {
+                        "fn": "1i"
+                    }
+                },
                 "u_ka": {
                     "name": "u_ka",
                     "opts": {

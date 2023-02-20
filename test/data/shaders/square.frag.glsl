@@ -1,8 +1,7 @@
 #version 300 es
 
 precision highp float;
-
-uniform float u_time;
+precision highp int;
 
 //material for the square
 uniform float u_ka, u_kd, u_ks;
@@ -10,8 +9,10 @@ uniform float u_ka, u_kd, u_ks;
 //max number of allowed lights
 const int MAX_LIGHTS_N = 8;
 
+uniform float u_time;
 uniform vec3 u_ambient_color;
 uniform float u_ambient_intensity;
+uniform int u_nlights;
 
 uniform vec3 u_light_positions[MAX_LIGHTS_N];
 uniform vec3 u_light_colors[MAX_LIGHTS_N];
@@ -35,23 +36,21 @@ void main() {
     // color = vec3(abs(sin(t)), cos(t), sin(1. - t * 2.));
     
     vec3 n = normalize(normal.xyz);
-    // vec3 view2pos = normalize(-view_pos.xyz / view_pos.w); //from viewer (i.e. camera) to current pos
-    // mat4 M = u_view * u_model;
     
     color += u_ka * u_ambient_color;
-    for(int i = 0; i < MAX_LIGHTS_N; i ++ ) {
+    for(int i = 0; i < u_nlights; i ++ ) {
         vec3 l = normalize(light_dirs[i]);
         vec3 h = normalize(light_half_vects[i]);
         float I = u_light_intensities[i];
         vec3 Lc = u_light_colors[i];
         
         color += (
-                u_kd * max(0.0, dot(n, l)) * Lc +
-                u_ks * pow(max(0.0, dot(n, h)), u_light_specular_exp[i]) * Lc
+                (u_kd * I * max(0.0, dot(n, l)) * Lc) +
+                (u_ks * I * pow(max(0.0, dot(n, h)), u_light_specular_exp[i]) * Lc)
         );
         
     }
+
     
-    // color.r = max(0.0, color.r);
     outColor = vec4(color, 1.0);
 }

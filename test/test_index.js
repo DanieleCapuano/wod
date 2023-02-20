@@ -29,8 +29,10 @@ function _onload() {
         canvas.setAttribute('height', window.innerHeight);
         init_scene(canvas, desc);
 
-        start_btn.addEventListener('click', run_scene);
-        stop_btn.addEventListener('click', stop_scene);
+        //just start, no clicks needed!
+        // start_btn.addEventListener('click', run_scene);
+        // stop_btn.addEventListener('click', stop_scene);
+        run_scene();
     });
 
 }

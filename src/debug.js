@@ -1,0 +1,63 @@
+export const print_debug = _print_debug;
+
+///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
+//this prints the final results of the graphics pipeline computation, i.e. what arrives to the fragment shader
+function _print_debug(OI, canvas) {
+    OI.objects_to_draw.forEach((obj) => {
+        console.info("M MODELVIEW", obj.model_view_matrix.elements);
+        console.info("M PROJECTION", OI.projection_matrix.elements);
+        let ////////////////////////////////
+            model_view_matrix = obj.model_view_matrix,
+            projection_matrix = OI.projection_matrix,
+            mvp = OI.projection_matrix.mul(
+                obj.model_view_matrix
+            );
+        console.info("M MVP", mvp.elements);
+
+        let //////////////////////////////////
+            a = [],
+            coords = obj.coords,
+            j = 0,
+            f32a = new Float32Array(coords.length * (obj.coords_dim + 1)); //obj.coords_dim + 1 because we're sending homogeneous coordinates to the GPU
+
+        for (let i = 0; i < coords.length; i += obj.coords_dim) {
+            console.info("IT", i, coords[i], coords[i + 1], coords[i + 2]);
+            let ////////////////////////////////
+                transf_vec_mv = model_view_matrix.mul(
+                    glm.vec4(coords[i], coords[i + 1], coords[i + 2], 1.)
+                ),
+                transf_vec_pj = projection_matrix.mul(transf_vec_mv),
+                tr_elems = transf_vec_pj.elements;
+
+            console.info("TRANSFORMED COORDS MODELVIEW", transf_vec_mv.elements);
+            console.info("TRANSFORMED COORDS PROJ", transf_vec_pj.elements);
+
+            f32a[j] = tr_elems[0];
+            f32a[j + 1] = tr_elems[1];
+            f32a[j + 2] = tr_elems[2];
+            f32a[j + 3] = tr_elems[3];
+
+            a.push(glm.vec4(
+                tr_elems[0] / tr_elems[3],
+                tr_elems[1] / tr_elems[3],
+                tr_elems[2] / tr_elems[3],
+                1.
+            ));
+
+            j += 4;
+        }
+        let vl = 0,
+            vr = canvas.width,
+            vt = canvas.height,
+            vb = 0,
+            viewport_mat = glm.mat4(
+                (vr - vl) / 2, 0, 0, 0,
+                0, (vt - vb) / 2, 0, 0,
+                0, 0, 1 / 2, 0,
+                (vr + vl) / 2, (vt + vb) / 2, 1 / 2, 1
+            );
+        a = a.map(vec => viewport_mat.mul(vec));
+        console.info("TRANSFORMED ARRS", f32a, a.map(vec => vec.elements).flat());
+    });
+}

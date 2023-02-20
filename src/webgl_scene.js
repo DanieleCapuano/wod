@@ -91,6 +91,7 @@ function _draw_objects(gl, objects_info, time) {
             u_ka: obj.material.ka,
             u_kd: obj.material.kd,
             u_ks: obj.material.ks,
+            u_nlights: lighting.number_of_lights,
             u_ambient_color: lighting.ambient.color,
             u_ambient_intensity: lighting.ambient.intensity,
             u_light_positions: lighting.light_positions,
