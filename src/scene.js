@@ -1,7 +1,9 @@
 import glm from "glm-js";
 import * as T from './transforms';
+import { auto_animation, listen_to_keys, get_params } from "./interactions";
+import { print_debug } from "./debug";
 
-import { draw_objects, init_scene_webgl, run_program, stop_program } from "./webgl_scene";
+import { draw_objects, init_scene_webgl } from "./webgl_scene";
 
 /*********************************************************************
  * this module is responsible for the scene initialization
@@ -11,7 +13,8 @@ import { draw_objects, init_scene_webgl, run_program, stop_program } from "./web
 const DEBUG = {
     print_coords: false,
     print: false,
-    interactions: true
+    interactions: false,
+    animation: true
 };
 
 export const init_scene = _init_scene;
@@ -25,9 +28,6 @@ let ////////////////////////////////////////
     program_running = false,
     objects_descriptions = [],
     scene_description = {},
-    rot_amount = 1,
-    camera_rot_x = 0,
-    camera_rot_y = 0,
     objects_info = [];
 
 function _init_scene(in_canvas, desc) {
@@ -42,7 +42,8 @@ function _init_scene(in_canvas, desc) {
     scene_description = scene_desc;
     objects_info = _init_scene_struct(objects_descriptions, scene_description);
 
-    DEBUG.interactions && _listen_to_keys();
+    DEBUG.interactions && listen_to_keys();
+    DEBUG.animation && auto_animation();
 
     return {
         webgl_scene: init_scene_webgl(gl, objects_info),
@@ -58,7 +59,7 @@ function _run() {
 function _do_run(time) {
     if (program_running) requestAnimationFrame(_do_run);
     const { objects, Mlookat } = _compute_modelview(objects_info.objects_to_draw, scene_description);
-    
+
     objects_info.objects_to_draw = objects;
     objects_info.view_matrix = Mlookat;
 
@@ -69,41 +70,26 @@ function _stop() {
     program_running = false;
 }
 
-function _listen_to_keys() {
-    document.addEventListener('keydown', (e) => {
-        switch (e.key) {
-            case "Down": // IE/Edge specific value
-            case "ArrowDown":
-                camera_rot_x -= rot_amount;
-                break;
-            case "Up": // IE/Edge specific value
-            case "ArrowUp":
-                camera_rot_x += rot_amount;
-                break;
-            case "Left": // IE/Edge specific value
-            case "ArrowLeft":
-                camera_rot_y += rot_amount;
-                break;
-            case "Right": // IE/Edge specific value
-            case "ArrowRight":
-                camera_rot_y -= rot_amount;
-                break;
-        }
-        DEBUG.print && console.info("ROT", camera_rot_x, camera_rot_y);
-    });
-}
-
 
 function _init_scene_struct(objs_list, scene_desc) {
-    let { objects, Mlookat } = _compute_modelview(_compute_objects_coords(objs_list, scene_desc), scene_desc);
+    let { objects, Mlookat, lighting } = Object.assign(
+        _compute_modelview(
+            _compute_objects_coords(
+                objs_list,
+                scene_desc
+            ),
+            scene_desc),
+        _compute_ligthing(scene_desc)
+    );
 
     const OI = {
         objects_to_draw: objects,
         projection_matrix: T.perspective(90, canvas.width / canvas.height, .1, 99),
-        view_matrix: Mlookat
+        view_matrix: Mlookat,
+        lighting
     }
 
-    DEBUG.print_coords && _print_debug(OI);
+    DEBUG.print_coords && print_debug(OI, canvas);
 
     return OI;
 }
@@ -117,17 +103,7 @@ function _compute_objects_coords(objects, scene_desc) {
 
             ////////////////////
             //model transform computed multiplying up all the transformations in the object description file
-            model_matrix: Object.keys(scene_desc)
-                .filter((scene_desc_key) => scene_desc_key === obj_def.id)
-                .map((scene_desc_key) => scene_desc[scene_desc_key].transforms || [])
-                .flat()
-                .reduce((M, transform_desc, i, arr) => {
-                    let transform_fn = T[transform_desc.type] || (() => glm.mat4(1));
-                    let M_ret = M.mul(transform_fn(glm.vec3(transform_desc.amount)));
-
-                    return M_ret;
-
-                }, glm.mat4(1))
+            model_matrix: _compute_model_matrix(obj_def.id, scene_desc)
         })
     });
 }
@@ -150,52 +126,68 @@ function _compute_coords_and_normals(obj_def) {
         fa_len = coords_dim * (has_normals ? 2 : 1);
 
 
-    return coordinates_def
-        .reduce((ab, coord_buf, i) => {
+    let data = coordinates_def
+        .reduce((o, coord_buf, i, coords_a) => {
+            if (i > 0 && i % coords_dim === 0) {
+                o.normal = null;
+            }
+
             let icurr = i * (coords_dim * (has_normals ? 2 : 1)),
-                n = has_normals ? _normal(coordinates_def, i) : null,
+                n = has_normals ? (o.normal || _normal(coords_a.slice(i, i + coords_dim))) : null,
                 k = 0,
                 j = icurr;
 
             for (j = icurr; j < icurr + coords_dim; j++) {
-                ab[j] = coord_buf[k];
+                o.ab[j] = coord_buf[k];
                 k++;
             }
 
             if (n) {
-                ab[j] = n[0];
-                ab[j + 1] = n[1];
-                ab[j + 2] = n[2];
+                o.ab[j] = n[0];
+                o.ab[j + 1] = n[1];
+                o.ab[j + 2] = n[2];
+
+                o.normal = n;
             }
 
-            return ab;
-        }, new Float32Array(coordinates_def.length * fa_len))
+            return o;
+        }, {
+            ab: new Float32Array(coordinates_def.length * fa_len),
+            normal: null
+        });
+
+    return data.ab;
 }
 
-function _normal(coords, i) {
-    let ip1 = i + 1,
-        a = ip1 === coords.length ? coords[i] : coords[ip1],
-        b = ip1 === coords.length ? coords[i - 1] : coords[i];
+function _normal(triangle_vertices) {
+    let a = glm.vec3(triangle_vertices[0]),
+        b = glm.vec3(triangle_vertices[1]),
+        c = glm.vec3(triangle_vertices[2]);
 
-    return glm.cross(glm.vec3(a), glm.vec3(b));
+    return glm.cross(b.sub(a), c.sub(a));
 }
+
 
 //this is put in a separate function because it's computed at each animation frame
 function _compute_modelview(objects, scene_desc) {
+    const { model_rot_x, model_rot_y } = get_params();
     const C = scene_desc.camera;
     let C_pos = glm.vec3(1),
-        C_up = glm.vec3(C.up),
         Mlookat = glm.mat4(1);
 
-    let M_r = T.rotate_axis(glm.vec3(1, 0, 0), camera_rot_x).mul(
-        T.rotate_axis(glm.vec3(0, 1, 0), camera_rot_y)
+    let M_r = T.rotate_axis(glm.vec3(1, 0, 0), model_rot_x).mul(
+        T.rotate_axis(glm.vec3(0, 1, 0), model_rot_y)
     );
 
-    C_pos = M_r.mul(glm.vec4(C.position.concat(1)));
-    C_up = T.rotate_axis(glm.vec3(1, 0, 0), camera_rot_x, C_up);
-    Mlookat = T.lookAt(C_pos.xyz, glm.vec3(C.center), C_up);
+    // C_pos = M_r.mul(glm.vec4(C.position.concat(1)));
+    // let C_up = M_r.mul(glm.vec4(C.up.concat(0)));
+    C_pos = glm.vec4(C.position.concat(1.));
+    let C_up = glm.vec4(C.up.concat(0.));
+
+    Mlookat = T.lookAt(C_pos.xyz, glm.vec3(C.center), glm.vec3(C_up.x, C_up.y, C_up.z));
 
     objects.forEach((obj_def) => {
+        obj_def.model_matrix = M_r.mul(_compute_model_matrix(obj_def.id, scene_desc));
         obj_def.model_view_matrix = Mlookat.mul(obj_def.model_matrix);
     });
 
@@ -205,62 +197,27 @@ function _compute_modelview(objects, scene_desc) {
     };
 }
 
-//this prints the final results of the graphics pipeline computation, i.e. what arrives to the fragment shader
-function _print_debug(OI) {
-    OI.objects_to_draw.forEach((obj) => {
-        console.info("M MODELVIEW", obj.model_view_matrix.elements);
-        console.info("M PROJECTION", OI.projection_matrix.elements);
-        let ////////////////////////////////
-            model_view_matrix = obj.model_view_matrix,
-            projection_matrix = OI.projection_matrix,
-            mvp = OI.projection_matrix.mul(
-                obj.model_view_matrix
-            );
-        console.info("M MVP", mvp.elements);
+function _compute_model_matrix(obj_id, scene_desc) {
+    return Object.keys(scene_desc)
+        .filter((scene_desc_key) => scene_desc_key === obj_id)
+        .map((scene_desc_key) => scene_desc[scene_desc_key].transforms || [])
+        .flat()
+        .reduce((M, transform_desc, i, arr) => {
+            let transform_fn = T[transform_desc.type] || (() => glm.mat4(1));
+            let M_ret = M.mul(transform_fn(glm.vec3(transform_desc.amount)));
 
-        let //////////////////////////////////
-            a = [],
-            coords = obj.coords,
-            j = 0,
-            f32a = new Float32Array(coords.length * (obj.coords_dim + 1)); //obj.coords_dim + 1 because we're sending homogeneous coordinates to the GPU
+            return M_ret;
 
-        for (let i = 0; i < coords.length; i += obj.coords_dim) {
-            console.info("IT", i, coords[i], coords[i + 1], coords[i + 2]);
-            let ////////////////////////////////
-                transf_vec_mv = model_view_matrix.mul(
-                    glm.vec4(coords[i], coords[i + 1], coords[i + 2], 1.)
-                ),
-                transf_vec_pj = projection_matrix.mul(transf_vec_mv),
-                tr_elems = transf_vec_pj.elements;
+        }, glm.mat4(1))
+}
 
-            console.info("TRANSFORMED COORDS MODELVIEW", transf_vec_mv.elements);
-            console.info("TRANSFORMED COORDS PROJ", transf_vec_pj.elements);
+function _compute_ligthing(scene_desc) {
+    const { lighting } = scene_desc;
+    lighting.light_positions = lighting.lights.reduce((poss, l) => poss.concat(l.position), []);
+    lighting.light_colors = lighting.lights.reduce((cols, l) => cols.concat(l.color), []);
+    lighting.light_intensities = lighting.lights.reduce((ints, l) => ints.concat(l.intensity), []);
+    lighting.light_specular_exp = lighting.lights.reduce((exps, l) => exps.concat(l.specular_exp), []);
+    lighting.number_of_lights = lighting.lights.length;
 
-            f32a[j] = tr_elems[0];
-            f32a[j + 1] = tr_elems[1];
-            f32a[j + 2] = tr_elems[2];
-            f32a[j + 3] = tr_elems[3];
-
-            a.push(glm.vec4(
-                tr_elems[0] / tr_elems[3],
-                tr_elems[1] / tr_elems[3],
-                tr_elems[2] / tr_elems[3],
-                1.
-            ));
-
-            j += 4;
-        }
-        let vl = 0,
-            vr = canvas.width,
-            vt = canvas.height,
-            vb = 0,
-            viewport_mat = glm.mat4(
-                (vr - vl) / 2, 0, 0, 0,
-                0, (vt - vb) / 2, 0, 0,
-                0, 0, 1 / 2, 0,
-                (vr + vl) / 2, (vt + vb) / 2, 1 / 2, 1
-            );
-        a = a.map(vec => viewport_mat.mul(vec));
-        console.info("TRANSFORMED ARRS", f32a, a.map(vec => vec.elements).flat());
-    });
+    return { lighting };
 }

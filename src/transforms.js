@@ -85,22 +85,22 @@ function _rotate(amount_vec3, invec) {
 
     const
         r_x = tx === 0 ? glm.mat4(1) : glm.mat4(
-            1, 0, 0, 0,
-            0, cos(tx), sin(tx), 0,
-            0, 0, -sin(tx), cos(tx),
-            0, 0, 0, 1
+            1, 0,        0,       0,
+            0, cos(tx),  sin(tx), 0,
+            0, -sin(tx), cos(tx), 0,
+            0, 0,        0,       1
         ),
         r_y = ty === 0 ? glm.mat4(1) : glm.mat4(
             cos(ty), 0, -sin(ty), 0,
-            0, 1, 0, 0,
-            sin(ty), 0, cos(ty), 1,
-            0, 0, 0, 1
+            0,       1, 0,        0,
+            sin(ty), 0, cos(ty),  0,
+            0,       0, 0,        1
         ),
         r_z = tz === 0 ? glm.mat4(1) : glm.mat4(
-            cos(tz), sin(tz), 0, 0,
+            cos(tz),  sin(tz), 0, 0,
             -sin(tz), cos(tz), 0, 0,
-            0, 0, 1, 0,
-            0, 0, 0, 1
+            0,        0,       1, 0,
+            0,        0,       0, 1
         );
     let M = r_x.mul(r_y).mul(r_z);
 
