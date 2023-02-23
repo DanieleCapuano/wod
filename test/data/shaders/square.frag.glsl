@@ -3,6 +3,8 @@
 precision highp float;
 precision highp int;
 
+#include "lighting.frag"
+
 //material for the square
 uniform float u_ka, u_kd, u_ks;
 
@@ -19,11 +21,7 @@ uniform vec3 u_light_colors[MAX_LIGHTS_N];
 uniform float u_light_intensities[MAX_LIGHTS_N];
 uniform float u_light_specular_exp[MAX_LIGHTS_N];
 
-uniform mat4 u_model;
-uniform mat4 u_view;
-
 in vec4 normal;
-in vec4 view_pos;
 in vec3 light_dirs[MAX_LIGHTS_N];
 in vec3 light_half_vects[MAX_LIGHTS_N];
 
@@ -45,12 +43,11 @@ void main() {
         vec3 Lc = u_light_colors[i];
         
         color += (
-                (u_kd * I * max(0.0, dot(n, l)) * Lc) +
-                (u_ks * I * pow(max(0.0, dot(n, h)), u_light_specular_exp[i]) * Lc)
+            (u_kd * I*max(0.0, dot(n, l)) * Lc) +
+            (u_ks * I*pow(max(0.0, dot(n, h)), u_light_specular_exp[i]) * Lc)
         );
         
     }
-
     
     outColor = vec4(color, 1.0);
 }

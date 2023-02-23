@@ -1,0 +1,1 @@
+void function compute_lighting_frag(){}
