@@ -1,5 +1,7 @@
 import glm from "glm-js";
 import * as T from './transforms';
+import { default as plugins } from 'wplug';
+
 import { auto_animation, listen_to_keys, get_params } from "./interactions";
 import { print_debug } from "./debug";
 
@@ -79,11 +81,16 @@ function _init_scene_struct(objs_list, scene_desc) {
                 scene_desc
             ),
             scene_desc),
-        _compute_ligthing(scene_desc)
+        // _compute_ligthing(scene_desc)
+        Object.keys(scene_desc).reduce((plugs_o, desc_key) => Object.assign(
+            plugs_o,
+            plugins[desc_key] ? _get_plugin_desc(plugins, desc_key, scene_desc) : {}
+        ), {})
     );
 
     const OI = {
         objects_to_draw: objects,
+        scene_desc,
         projection_matrix: T.perspective(90, canvas.width / canvas.height, .1, 99),
         view_matrix: Mlookat,
         lighting
@@ -211,13 +218,8 @@ function _compute_model_matrix(obj_id, scene_desc) {
         }, glm.mat4(1))
 }
 
-function _compute_ligthing(scene_desc) {
-    const { lighting } = scene_desc;
-    lighting.light_positions = lighting.lights.reduce((poss, l) => poss.concat(l.position), []);
-    lighting.light_colors = lighting.lights.reduce((cols, l) => cols.concat(l.color), []);
-    lighting.light_intensities = lighting.lights.reduce((ints, l) => ints.concat(l.intensity), []);
-    lighting.light_specular_exp = lighting.lights.reduce((exps, l) => exps.concat(l.specular_exp), []);
-    lighting.number_of_lights = lighting.lights.length;
-
-    return { lighting };
+function _get_plugin_desc(plugins, plugin_type, scene_desc) {
+    let plugin_id = scene_desc[plugin_type].id;
+    let plugin = plugins[plugin_type][plugin_id];
+    return plugin.logic.get_description_values(scene_desc);
 }

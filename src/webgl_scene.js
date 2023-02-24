@@ -1,4 +1,5 @@
 import { buffer_data, create_program, init_vao, setup_indices, set_uniforms } from "./webgl_utils";
+import { default as plugins } from 'wplug';
 
 /*********************************************************************
  * this module is responsible for the scene initialization and management
@@ -23,24 +24,25 @@ function _init_scene_webgl(gl, objects_info) {
             { vertex, fragment } = program_info_def.shaders,
             { shaders_data } = program_info_def;
 
-        let pi = _init_webgl_program(gl, vertex.code, fragment.code, Object.assign(shaders_data, {
-            attributes: Object.keys(shaders_data.attributes).reduce((a_obj, attr_key) => {
-                let ////////////////
-                    attr_def = shaders_data.attributes[attr_key],
-                    opts = attr_def.opts;
+        let shad_data = _plugins_into_shaders_data(shaders_data, objects_info.scene_desc),
+            pi = _init_webgl_program(gl, vertex.code, fragment.code, Object.assign(shad_data, {
+                attributes: Object.keys(shaders_data.attributes).reduce((a_obj, attr_key) => {
+                    let ////////////////
+                        attr_def = shaders_data.attributes[attr_key],
+                        opts = attr_def.opts;
 
-                attr_def.opts = [
-                    opts.size || coords_dim,         //size
-                    gl[opts.data_type],  //type
-                    opts.normalized,     //normalized
-                    opts.stride,         //stride
-                    opts.offset          //offset
-                ];
-                return Object.assign(a_obj, {
-                    [attr_key]: attr_def
-                });
-            }, {})
-        }));
+                    attr_def.opts = [
+                        opts.size || coords_dim,         //size
+                        gl[opts.data_type],  //type
+                        opts.normalized,     //normalized
+                        opts.stride,         //stride
+                        opts.offset          //offset
+                    ];
+                    return Object.assign(a_obj, {
+                        [attr_key]: attr_def
+                    });
+                }, {})
+            }));
 
         Object.keys(pi.attributes)
             .filter(attr_key => pi.attributes[attr_key].is_position)
@@ -69,7 +71,7 @@ function _init_scene_webgl(gl, objects_info) {
 function _draw_objects(gl, objects_info, time) {
     objects_info.run_callback && objects_info.run_callback(gl, objects_info, time);
 
-    const { lighting, view_matrix, projection_matrix } = objects_info;
+    const { view_matrix, projection_matrix } = objects_info;
     objects_info.objects_to_draw.forEach((obj) => {
         const prog_info = programs_info[obj.id],
             { number_of_points, primitive, program_info } = prog_info,
@@ -82,23 +84,13 @@ function _draw_objects(gl, objects_info, time) {
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         gl.enable(gl.DEPTH_TEST);
 
-        set_uniforms(gl, {
+        set_uniforms(gl, Object.assign({
             u_time: time || 0,
             u_model: obj.model_matrix.elements,
             u_view: view_matrix.elements,
             u_modelview: obj.model_view_matrix.elements,
-            u_projection: projection_matrix.elements,
-            u_ka: obj.material.ka,
-            u_kd: obj.material.kd,
-            u_ks: obj.material.ks,
-            u_nlights: lighting.number_of_lights,
-            u_ambient_color: lighting.ambient.color,
-            u_ambient_intensity: lighting.ambient.intensity,
-            u_light_positions: lighting.light_positions,
-            u_light_colors: lighting.light_colors,
-            u_light_intensities: lighting.light_intensities,
-            u_light_specular_exp: lighting.light_specular_exp
-        }, prog_info);
+            u_projection: projection_matrix.elements
+        }, _set_uniforms_from_plugins(obj, objects_info)), prog_info);
 
         if (prog_info.index_buffer) {
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, prog_info.index_buffer);
@@ -113,4 +105,32 @@ function _draw_objects(gl, objects_info, time) {
 function _init_webgl_program(gl, vert, frag, program_info) {
     program_info.program = create_program(gl, vert, frag);
     return init_vao(gl, program_info);
+}
+
+function _plugins_into_shaders_data(shaders_data, scene_desc) {
+    return Object.keys(plugins).reduce((shad_data, plugin_type) => {
+        let ret = shad_data;
+        if (scene_desc[plugin_type]) {
+            let plugin_id = scene_desc[plugin_type].id,
+                plugin = plugins[plugin_type][plugin_id];
+            Object.assign(ret,
+                plugin.config.attributes || {},
+                plugin.config.uniforms || {}
+            )
+        }
+        return ret;
+    }, shaders_data);
+}
+
+function _set_uniforms_from_plugins(obj, objects_info) {
+    const { scene_desc } = objects_info;
+    return Object.keys(plugins).reduce((o, plugin_type) => {
+        let ret = o;
+        if (scene_desc[plugin_type]) {
+            let plugin_id = scene_desc[plugin_type].id;
+            let plugin = plugins[plugin_type][plugin_id];
+            Object.assign(o, plugin.logic.set_uniforms_values(obj, scene_desc));
+        }
+        return ret;
+    }, {});
 }

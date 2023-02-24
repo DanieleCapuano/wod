@@ -1,5 +1,5 @@
 import { init_scene, run_scene, stop_scene } from "./scene";
-import { init_data } from "./data";
+import { init_data } from "./config_parser";
 import * as Transforms from "./transforms";
 import * as WebGLUtils from './webgl_utils';
 

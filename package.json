@@ -11,7 +11,8 @@
     "test": "npm run build-test && cd test && http-server . -p 3133 -o"
   },
   "devDependencies": {
-    "glm-js": "^0.0.6-c"
+    "glm-js": "^0.0.6-c",
+    "wplug": "https://github.com/DanieleCapuano/wplug#master"
   },
   "dependencies": {
     "webpack": "^5.74.0",
@@ -20,6 +21,7 @@
     "style-loader": "^3.3.1",
     "sass-loader": "^13.0.2",
     "node-sass": "^7.0.1",
-    "webpack-glsl-loader": "^1.0.1"
+    "webpack-glsl-loader": "^1.0.1",
+    "copy-webpack-plugin": "11.0.0"
   }
 }

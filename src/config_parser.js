@@ -1,4 +1,5 @@
 export const init_data = _init_data;
+import { default as plugins } from 'wplug';
 
 function _init_data(data) {
     return new Promise((res, err) => {
@@ -22,20 +23,10 @@ function _init_data(data) {
                             .map((obj_key) => {
                                 let program_shaders = objects_jsons[obj_key].program_info_def.shaders;
                                 return obj2map(
-                                    Object.assign(
-                                        {
-                                            vertex: _get_url(program_shaders.vertex.url, 'text'),
-                                            fragment: _get_url(program_shaders.fragment.url, 'text')
-                                        },
-                                        //lighting management
-                                        scene_desc.lighting ? _get_promises_as_obj(scene_desc.lighting.shaders) : {},
-
-                                        //in-shaders anti-aliasing management
-                                        scene_desc.antialias ? _get_promises_as_obj(scene_desc.antialias.shaders) : {},
-
-                                        //....add more shaders here, e.g.
-                                        //other_shaders_needed_obj ? _get_promises_as_obj(other_shaders_needed_obj.shaders) : {},
-                                    )
+                                    Object.assign({
+                                        vertex: _get_url(program_shaders.vertex.url, 'text'),
+                                        fragment: _get_url(program_shaders.fragment.url, 'text')
+                                    })
                                 );
                             })
                     ).then((shaders_code_arr_of_objs) => {
@@ -54,8 +45,8 @@ function _init_data(data) {
                                         { program_info_def } = o,
                                         { shaders } = program_info_def;
 
-                                    shaders.vertex.code = glsl_replace_includes(shaders_code.vertex, shaders_code);
-                                    shaders.fragment.code = glsl_replace_includes(shaders_code.fragment, shaders_code);
+                                    shaders.vertex.code = glsl_replace_includes(scene_desc, shaders_code.vertex, plugins);
+                                    shaders.fragment.code = glsl_replace_includes(scene_desc, shaders_code.fragment, plugins);
                                     if (--_n_objects === 0) _loops_end();
                                 },
                                 shaders_code_map = shaders_code_arr_of_objs[i],
@@ -83,46 +74,23 @@ function _init_data(data) {
     });
 }
 
-/*
- * lighting is managed by hand using multiple sources:
- * 
- * 1. in the scene.json file the description of each lighting shaders, if any, is provided. e.g. 
- * /////........
- * "lighting": {
- *   "shaders": {
- *      "lighting.vert": {
- *        "url": "urloftheshader"
- *      },
- *      "lighting.frag": {
- *        "url": "urloftheshader"
- *      }
- *   }
- * }
- * /////........
- * 
- * 2. in the vertex/fragment shaders for each object a directive like 
- * include "lighting.vert"
- * is expected. The name of the include must match an existent key in the shaders described in scenes.json
- * The glsl_replace_includes function below implements a string substitution for each include.
- * 
- * TODO: move the library shaders and JS functions to a separate library, including the
- * "attributes" and "uniforms" sections in the objects.json (e.g. "square.json" here in the test) descriptions
- * All the dependencies related to a library shader should be self-consistent and 
- * should not be explicitly described in json configs or js code
- */
-function _get_promises_as_obj(lighting_obj) {
-    return Object.keys(lighting_obj).reduce((o, l_key) => {
-        return Object.assign(o, {
-            [l_key]: _get_url(lighting_obj[l_key].url, 'text')
-        })
-    }, {});
-}
-
 //we'll use the same approach described here 
 //https://stackoverflow.com/a/62630376
-function glsl_replace_includes(src, includes_hash) {
-    return src.replace(/#include\s+\"(\w+.?-?_?\w+)\"/g, (m, key) => {
-        return includes_hash[key];
+//AND 
+//we'll use a plugin-based approach using the wplug library
+//
+//in wplug we've plugins belonging to "types" (e.g. lighting, antialias, ...) and specific "ids" (e.g. "blinn_phong")
+//in each object's shader, when a plugin must be included, we can write a line like
+//include "lighting.vert"
+//then the plugin_id is taken from the scene description json (e.g. {"lighting": {"id": "blinn_phong"}})
+//so we can take the specific shader from the plugin and plug it into our current shader. Cool!
+//
+//TODO maybe a easier way to manage that would be to replace the line "main(...)" with a new line where the plugin code is pasted
+//in this way we'll remove the requirement of having the include line matching the plugins structure
+function glsl_replace_includes(scene_desc, src, plugins) {
+    return src.replace(/#include\s+\"(\w+).?-?_?(\w+)\"/g, (m, plugin_type, shader_type) => {
+        let plugin_id = scene_desc[plugin_type].id;
+        return plugins[plugin_type][plugin_id].shaders[shader_type];
     });
 }
 

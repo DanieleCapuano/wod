@@ -17,14 +17,7 @@
         ]
     },
     "lighting": {
-        "shaders": {
-            "lighting.vert": {
-                "url": "/data/shaders/lighting.vert.glsl"
-            },
-            "lighting.frag": {
-                "url": "/data/shaders/lighting.frag.glsl"
-            }
-        },
+        "id": "blinn_phong",
         "ambient": {
             "color": [
                 0.5,
