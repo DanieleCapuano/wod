@@ -17,6 +17,14 @@
         ]
     },
     "lighting": {
+        "shaders": {
+            "lighting.vert": {
+                "url": "/data/shaders/lighting.vert.glsl"
+            },
+            "lighting.frag": {
+                "url": "/data/shaders/lighting.frag.glsl"
+            }
+        },
         "ambient": {
             "color": [
                 0.5,
