@@ -3,14 +3,14 @@
 precision highp float;
 precision highp int;
 
-#include "lighting.vert"
-
 in vec3 a_position;
 
 uniform mat4 u_model;
 uniform mat4 u_view;
 uniform mat4 u_modelview;
 uniform mat4 u_projection;
+
+#include "lighting.vert"
 
 void main() {
     mat4 M = u_view * u_model;

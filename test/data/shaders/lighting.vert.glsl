@@ -1,4 +1,4 @@
-//we'll use as inspiration the approach described here 
+//we'll use as inspiration the approach described here
 //https://stackoverflow.com/a/62630376
 
 in vec3 a_normal;
@@ -12,7 +12,7 @@ out vec4 normal;
 out vec3 light_dirs[MAX_LIGHTS_N];
 out vec3 light_half_vects[MAX_LIGHTS_N];
 
-void compute_lighting_vert(mat4 view_m, mat4 modelview_m) {
+int compute_lighting_vert(mat4 view_m, mat4 modelview_m) {
     vec4 view_pos = modelview_m * vec4(a_position, 1.0);
     
     for(int i = 0; i < u_nlights; i ++ ) {
@@ -25,4 +25,6 @@ void compute_lighting_vert(mat4 view_m, mat4 modelview_m) {
     
     mat4 Mti = transpose(inverse(modelview_m));
     normal = (Mti * vec4(a_normal, 0.0));
+    
+    return 1;
 }

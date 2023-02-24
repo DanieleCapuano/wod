@@ -84,7 +84,7 @@ function _get_lighting_promises(lighting_obj) {
 //we'll use the same approach described here 
 //https://stackoverflow.com/a/62630376
 function glsl_replace_includes(src, includes_hash) {
-    return src.replace(/#include\s+\"(\w+).(\w+)\"/g, (m, key) => {
+    return src.replace(/#include\s+\"(\w+.?\w+)\"/g, (m, key) => {
         return includes_hash[key];
     });
 }
