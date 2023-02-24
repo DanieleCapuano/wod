@@ -1,6 +1,5 @@
 export const init_data = _init_data;
 
-
 function _init_data(data) {
     return new Promise((res, err) => {
         data = data || {};
@@ -23,10 +22,20 @@ function _init_data(data) {
                             .map((obj_key) => {
                                 let program_shaders = objects_jsons[obj_key].program_info_def.shaders;
                                 return obj2map(
-                                    Object.assign({
-                                        vertex: _get_url(program_shaders.vertex.url, 'text'),
-                                        fragment: _get_url(program_shaders.fragment.url, 'text')
-                                    }, scene_desc.lighting ? _get_lighting_promises(scene_desc.lighting.shaders) : {})
+                                    Object.assign(
+                                        {
+                                            vertex: _get_url(program_shaders.vertex.url, 'text'),
+                                            fragment: _get_url(program_shaders.fragment.url, 'text')
+                                        },
+                                        //lighting management
+                                        scene_desc.lighting ? _get_promises_as_obj(scene_desc.lighting.shaders) : {},
+
+                                        //in-shaders anti-aliasing management
+                                        scene_desc.antialias ? _get_promises_as_obj(scene_desc.antialias.shaders) : {},
+
+                                        //....add more shaders here, e.g.
+                                        //other_shaders_needed_obj ? _get_promises_as_obj(other_shaders_needed_obj.shaders) : {},
+                                    )
                                 );
                             })
                     ).then((shaders_code_arr_of_objs) => {
@@ -63,6 +72,7 @@ function _init_data(data) {
                                     if (--map_n === 0) _after_loop(shaders_code);
                                 }).bind(null, shader_key.value);
 
+                                //this still contains a promise to be evaluated
                                 map_entries.next().value[1].then(entry_then);
                             }
                         });
@@ -73,7 +83,34 @@ function _init_data(data) {
     });
 }
 
-function _get_lighting_promises(lighting_obj) {
+/*
+ * lighting is managed by hand using multiple sources:
+ * 
+ * 1. in the scene.json file the description of each lighting shaders, if any, is provided. e.g. 
+ * /////........
+ * "lighting": {
+ *   "shaders": {
+ *      "lighting.vert": {
+ *        "url": "urloftheshader"
+ *      },
+ *      "lighting.frag": {
+ *        "url": "urloftheshader"
+ *      }
+ *   }
+ * }
+ * /////........
+ * 
+ * 2. in the vertex/fragment shaders for each object a directive like 
+ * include "lighting.vert"
+ * is expected. The name of the include must match an existent key in the shaders described in scenes.json
+ * The glsl_replace_includes function below implements a string substitution for each include.
+ * 
+ * TODO: move the library shaders and JS functions to a separate library, including the
+ * "attributes" and "uniforms" sections in the objects.json (e.g. "square.json" here in the test) descriptions
+ * All the dependencies related to a library shader should be self-consistent and 
+ * should not be explicitly described in json configs or js code
+ */
+function _get_promises_as_obj(lighting_obj) {
     return Object.keys(lighting_obj).reduce((o, l_key) => {
         return Object.assign(o, {
             [l_key]: _get_url(lighting_obj[l_key].url, 'text')
@@ -93,35 +130,11 @@ function _get_url(url, type) {
     return fetch(url).then(o => o[type || 'json']());
 }
 
+//for Promise.all we need an iterable object. We'll use a Map
 function obj2map(o) {
     let m = new Map();
     Object.keys(o).forEach(o_key => {
         m.set(o_key, o[o_key]);
     });
     return m;
-}
-
-//using Promise.all with object literals assigning iterator symbols to them:
-//https://stackoverflow.com/a/35834780
-function objectEntries(obj) {
-    let index = 0;
-
-    // In ES6, you can use strings or symbols as property keys,
-    // Reflect.ownKeys() retrieves both
-    let propKeys = Object.keys(obj);
-
-    return {
-        [Symbol.iterator]() {
-            return this;
-        },
-        next() {
-            if (index < propKeys.length) {
-                let key = propKeys[index];
-                index++;
-                return { [key]: obj[key] };
-            } else {
-                return { done: true };
-            }
-        }
-    };
 }
