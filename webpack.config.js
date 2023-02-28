@@ -6,8 +6,8 @@ module.exports = [{
   target: 'web',
   entry: './src/index.js',
   output: {
-    filename: "od.js",
-    library: 'od',
+    filename: "wod.js",
+    library: 'wod',
     libraryTarget: 'umd'
   },
   watchOptions: {

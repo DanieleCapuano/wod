@@ -1,5 +1,5 @@
 import "./style/main.scss";
-import { init_data, init_scene, run_scene, stop_scene } from "od";
+import { init_data, init_scene, run_scene, stop_scene } from "wod";
 
 /*********************************************************************
  * main module, which manages DOM events and interactions and triggers
