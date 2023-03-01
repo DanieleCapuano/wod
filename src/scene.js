@@ -62,8 +62,11 @@ function _do_run(time) {
     if (program_running) requestAnimationFrame(_do_run);
     const { objects, Mlookat } = _compute_modelview(objects_info.objects_to_draw, scene_description);
 
-    objects_info.objects_to_draw = objects;
-    objects_info.view_matrix = Mlookat;
+    Object.assign(objects_info, {
+        objects_to_draw: objects,
+        view_matrix: Mlookat,
+        resolution: [canvas.width, canvas.height]
+    });
 
     draw_objects(gl, objects_info, time || 0);
 }
@@ -93,6 +96,7 @@ function _init_scene_struct(objs_list, scene_desc) {
         scene_desc,
         projection_matrix: T.perspective(90, canvas.width / canvas.height, .1, 99),
         view_matrix: Mlookat,
+        resolution: [canvas.width, canvas.height],
         lighting
     }
 

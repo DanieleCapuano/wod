@@ -26,9 +26,9 @@ function _init_scene_webgl(gl, objects_info) {
 
         let shad_data = _plugins_into_shaders_data(shaders_data, objects_info.scene_desc),
             pi = _init_webgl_program(gl, vertex.code, fragment.code, Object.assign(shad_data, {
-                attributes: Object.keys(shaders_data.attributes).reduce((a_obj, attr_key) => {
+                attributes: Object.keys(shad_data.attributes).reduce((a_obj, attr_key) => {
                     let ////////////////
-                        attr_def = shaders_data.attributes[attr_key],
+                        attr_def = shad_data.attributes[attr_key],
                         opts = attr_def.opts;
 
                     attr_def.opts = [
@@ -71,7 +71,7 @@ function _init_scene_webgl(gl, objects_info) {
 function _draw_objects(gl, objects_info, time) {
     objects_info.run_callback && objects_info.run_callback(gl, objects_info, time);
 
-    const { view_matrix, projection_matrix } = objects_info;
+    const { view_matrix, projection_matrix, resolution } = objects_info;
     objects_info.objects_to_draw.forEach((obj) => {
         const prog_info = programs_info[obj.id],
             { number_of_points, primitive, program_info } = prog_info,
@@ -89,7 +89,8 @@ function _draw_objects(gl, objects_info, time) {
             u_model: obj.model_matrix.elements,
             u_view: view_matrix.elements,
             u_modelview: obj.model_view_matrix.elements,
-            u_projection: projection_matrix.elements
+            u_projection: projection_matrix.elements,
+            u_resolution: resolution
         }, _set_uniforms_from_plugins(obj, objects_info)), prog_info);
 
         if (prog_info.index_buffer) {
@@ -111,12 +112,13 @@ function _plugins_into_shaders_data(shaders_data, scene_desc) {
     return Object.keys(plugins).reduce((shad_data, plugin_type) => {
         let ret = shad_data;
         if (scene_desc[plugin_type]) {
-            let plugin_id = scene_desc[plugin_type].id,
-                plugin = plugins[plugin_type][plugin_id];
-            Object.assign(ret,
-                plugin.config.attributes || {},
-                plugin.config.uniforms || {}
-            )
+            const plugin_id = scene_desc[plugin_type].id,
+                plugin = plugins[plugin_type][plugin_id],
+                { config } = plugin;
+            Object.assign(ret, {
+                attributes: Object.assign({}, ret.attributes || {}, config.attributes || {}),
+                uniforms: Object.assign({}, ret.uniforms || {}, config.uniforms || {})
+            });
         }
         return ret;
     }, shaders_data);

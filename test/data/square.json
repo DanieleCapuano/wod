@@ -72,64 +72,10 @@
                         "fn": "Matrix4fv"
                     }
                 },
-                "u_nlights": {
-                    "name": "u_nlights",
+                "u_resolution": {
+                    "name": "u_resolution",
                     "opts": {
-                        "fn": "1i"
-                    }
-                },
-                "u_ka": {
-                    "name": "u_ka",
-                    "opts": {
-                        "fn": "1f"
-                    }
-                },
-                "u_kd": {
-                    "name": "u_kd",
-                    "opts": {
-                        "fn": "1f"
-                    }
-                },
-                "u_ks": {
-                    "name": "u_ks",
-                    "opts": {
-                        "fn": "1f"
-                    }
-                },
-                "u_ambient_color": {
-                    "name": "u_ambient_color",
-                    "opts": {
-                        "fn": "3fv"
-                    }
-                },
-                "u_ambient_intensity": {
-                    "name": "u_ambient_intensity",
-                    "opts": {
-                        "fn": "1f"
-                    }
-                },
-                "u_light_positions": {
-                    "name": "u_light_positions",
-                    "opts": {
-                        "fn": "3fv"
-                    }
-                },
-                "u_light_colors": {
-                    "name": "u_light_colors",
-                    "opts": {
-                        "fn": "3fv"
-                    }
-                },
-                "u_light_intensities": {
-                    "name": "u_light_intensities",
-                    "opts": {
-                        "fn": "1fv"
-                    }
-                },
-                "u_light_specular_exp": {
-                    "name": "u_light_specular_exp",
-                    "opts": {
-                        "fn": "1fv"
+                        "fn": "2fv"
                     }
                 }
             }
