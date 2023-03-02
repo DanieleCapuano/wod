@@ -126,12 +126,15 @@ function _plugins_into_shaders_data(shaders_data, scene_desc) {
 
 function _set_uniforms_from_plugins(obj, objects_info) {
     const { scene_desc } = objects_info;
+
+    //we could also use the "get_active_plugins" from ./plugins, but in this case it seems more efficient to simply
+    //check the plugins directly
     return Object.keys(plugins).reduce((o, plugin_type) => {
         let ret = o;
         if (scene_desc[plugin_type]) {
             let plugin_id = scene_desc[plugin_type].id;
             let plugin = plugins[plugin_type][plugin_id];
-            Object.assign(o, plugin.logic.set_uniforms_values(obj, scene_desc));
+            Object.assign(o, plugin.set_uniforms_values(obj, scene_desc));
         }
         return ret;
     }, {});

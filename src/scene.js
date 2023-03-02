@@ -6,6 +6,7 @@ import { auto_animation, listen_to_keys, get_params } from "./interactions";
 import { print_debug } from "./debug";
 
 import { draw_objects, init_scene_webgl } from "./webgl_scene";
+import { get_plugins_desc, setup_active_plugins, get_active_plugins } from "./plugins";
 
 /*********************************************************************
  * this module is responsible for the scene initialization
@@ -42,6 +43,8 @@ function _init_scene(in_canvas, desc) {
 
     objects_descriptions = objects_desc;
     scene_description = scene_desc;
+
+    setup_active_plugins(plugins, desc);
     objects_info = _init_scene_struct(objects_descriptions, scene_description);
 
     DEBUG.interactions && listen_to_keys();
@@ -87,7 +90,7 @@ function _init_scene_struct(objs_list, scene_desc) {
         // _compute_ligthing(scene_desc)
         Object.keys(scene_desc).reduce((plugs_o, desc_key) => Object.assign(
             plugs_o,
-            plugins[desc_key] ? _get_plugin_desc(plugins, desc_key, scene_desc) : {}
+            plugins[desc_key] ? get_plugins_desc(plugins, desc_key, scene_desc) : {}
         ), {})
     );
 
@@ -220,10 +223,4 @@ function _compute_model_matrix(obj_id, scene_desc) {
             return M_ret;
 
         }, glm.mat4(1))
-}
-
-function _get_plugin_desc(plugins, plugin_type, scene_desc) {
-    let plugin_id = scene_desc[plugin_type].id;
-    let plugin = plugins[plugin_type][plugin_id];
-    return plugin.logic.get_description_values(scene_desc);
 }
