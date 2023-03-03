@@ -4,17 +4,15 @@ export const get_plugins_desc = _get_plugins_desc;
 
 function _setup_active_plugins(plugins, config) {
     const { scene_desc } = config;
-    Object.keys(plugins).forEach(plugin_type => {
+    return Object.keys(plugins).reduce((c, plugin_type) => {
         if (scene_desc[plugin_type]) {
             const //////////////////////////////
                 plugin_id = scene_desc[plugin_type].id,
                 plugin = plugins[plugin_type][plugin_id];
 
-            Object.assign(config, plugin.set_active(true, config));
+            return Object.assign(c, plugin.set_active(true, config));
         }
     });
-
-    return config;
 }
 
 function _get_active_plugins(plugins) {
