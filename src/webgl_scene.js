@@ -1,5 +1,5 @@
 import { buffer_data, create_program, init_vao, setup_indices, set_uniforms } from "./webgl_utils";
-import { default as plugins } from 'wplug';
+import { plugins } from 'wplug';
 
 /*********************************************************************
  * this module is responsible for the scene initialization and management

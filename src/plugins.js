@@ -10,9 +10,11 @@ function _setup_active_plugins(plugins, config) {
                 plugin_id = scene_desc[plugin_type].id,
                 plugin = plugins[plugin_type][plugin_id];
 
-            plugin && plugin.set_active && plugin.set_active(true, config);
+            Object.assign(config, plugin.set_active(true, config));
         }
-    })
+    });
+
+    return config;
 }
 
 function _get_active_plugins(plugins) {

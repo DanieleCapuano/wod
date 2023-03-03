@@ -1,6 +1,6 @@
 import glm from "glm-js";
 import * as T from './transforms';
-import { default as plugins } from 'wplug';
+import { plugins } from 'wplug';
 
 import { auto_animation, listen_to_keys, get_params } from "./interactions";
 import { print_debug } from "./debug";
@@ -36,15 +36,15 @@ let ////////////////////////////////////////
 function _init_scene(in_canvas, desc) {
     canvas = in_canvas;
     if (!canvas || !desc) return;
-
-    const { scene_desc, objects_desc } = desc;
-
     gl = canvas.getContext('webgl2');
 
+    //plugins could generate coordinates or change the configuration descriptions
+    desc = setup_active_plugins(plugins, desc);
+
+    const { scene_desc, objects_desc } = desc;
     objects_descriptions = objects_desc;
     scene_description = scene_desc;
 
-    setup_active_plugins(plugins, desc);
     objects_info = _init_scene_struct(objects_descriptions, scene_description);
 
     DEBUG.interactions && listen_to_keys();

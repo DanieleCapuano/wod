@@ -1,5 +1,5 @@
 export const init_data = _init_data;
-import { default as plugins } from 'wplug';
+import { plugins } from 'wplug';
 
 function _init_data(data) {
     return new Promise((res, err) => {
@@ -16,8 +16,6 @@ function _init_data(data) {
                 .map((obj_key) => _get_url(objects[obj_key]))
             )
                 .then((objects_jsons) => {
-                    //using Promise.all with object literals assigning iterator symbols to them:
-                    //https://stackoverflow.com/a/35834780
                     Promise.all(
                         Object.keys(objects_jsons)
                             .map((obj_key) => {
@@ -59,7 +57,7 @@ function _init_data(data) {
                                 shader_key;
                             while ((shader_key = map_keys.next()).done === false) {
                                 const entry_then = ((shad_key, shader_src) => {
-                                    shaders_code[shad_key] = shader_src;
+                                    shaders_code[shad_key] = shader_src || "";
                                     if (--map_n === 0) _after_loop(shaders_code);
                                 }).bind(null, shader_key.value);
 
