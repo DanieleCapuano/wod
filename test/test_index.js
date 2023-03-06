@@ -24,15 +24,17 @@ function _onload() {
     init_data({
         objects_desc_url: "/data/objects_def.json",
         scene_desc_url: "/data/scene.json"
-    }).then(desc => {
+    }).then(scene_config => {
         canvas.setAttribute('width', window.innerWidth);
         canvas.setAttribute('height', window.innerHeight);
-        init_scene(canvas, desc);
+        scene_config.canvas = canvas;
 
-        //just start, no clicks needed!
-        // start_btn.addEventListener('click', run_scene);
-        // stop_btn.addEventListener('click', stop_scene);
-        run_scene();
+        scene_config = init_scene(scene_config);
+
+
+        run_scene(scene_config);
+        //..after a while
+        //stop_scene(desc)
     });
 
 }

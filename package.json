@@ -12,7 +12,8 @@
   },
   "devDependencies": {
     "glm-js": "^0.0.6-c",
-    "wplug": "https://github.com/DanieleCapuano/wplug#master"
+    "wplug": "https://github.com/DanieleCapuano/wplug#master",
+    "wbase": "https://github.com/DanieleCapuano/wbase#master"
   },
   "dependencies": {
     "webpack": "^5.74.0",

@@ -1,12 +1,10 @@
 import glm from "glm-js";
 import * as T from './transforms';
-import { plugins } from 'wplug';
 
 import { auto_animation, listen_to_keys, get_params } from "./interactions";
-import { print_debug } from "./debug";
 
 import { draw_objects, init_scene_webgl } from "./webgl_scene";
-import { get_plugins_desc, setup_active_plugins, get_active_plugins } from "./plugins";
+import { get_plugins_model, setup_active_plugins } from "./plugins";
 
 /*********************************************************************
  * this module is responsible for the scene initialization
@@ -26,102 +24,141 @@ export const stop_scene = _stop;
 
 
 let ////////////////////////////////////////
-    canvas,
-    gl,
-    program_running = false,
-    objects_descriptions = [],
-    scene_description = {},
-    objects_info = [];
+    program_running = false;
 
-function _init_scene(in_canvas, desc) {
-    canvas = in_canvas;
-    if (!canvas || !desc) return;
-    gl = canvas.getContext('webgl2');
+function _init_scene(scene_config) {
+    const { canvas } = (scene_config || {});
+    if (!canvas || !scene_config) return;
+
+    let gl = scene_config.gl || canvas.getContext('webgl2', {
+        desynchronized: true, //hints the user agent to reduce the latency by desynchronizing the canvas paint cycle from the event loop
+        powerPreference: 'high-performance'
+    });
+    scene_config.gl = gl;
+
+    //the "scene_config" object will be incremented with all the needed data and that's all we'll need!
 
     //plugins could generate coordinates or change the configuration descriptions
-    desc = setup_active_plugins(plugins, desc);
-
-    const { scene_desc, objects_desc } = desc;
-    objects_descriptions = objects_desc;
-    scene_description = scene_desc;
-
-    objects_info = _init_scene_struct(objects_descriptions, scene_description);
+    scene_config = setup_active_plugins(scene_config);
+    scene_config = _init_scene_struct(scene_config);
 
     DEBUG.interactions && listen_to_keys();
     DEBUG.animation && auto_animation();
 
+    return init_scene_webgl(scene_config);  //this will return the scene_config with enriched data for each object in objects_to_draw
+}
+
+function _init_scene_struct(scene_config) {
+    const { canvas } = scene_config;
+    return [
+        _compute_objects_coords,
+        _compute_modelview,
+        get_plugins_model
+    ].reduce(
+        (d, fn) => Object.assign(d, fn(d)),
+        Object.assign(scene_config, {
+            projection_matrix: T.perspective(90, canvas.width / canvas.height, .1, 99),
+            resolution: [canvas.width, canvas.height]
+        })
+    );
+}
+
+function _compute_objects_coords(scene_config) {
+    const { scene_desc, objects_desc } = scene_config;
     return {
-        webgl_scene: init_scene_webgl(gl, objects_info),
-        objects_info
+        objects_to_draw: objects_desc.map((obj_def) => {
+            return Object.assign(obj_def, {
+                ////////////////////
+                //Coordinates and normals put in a single Float32Array
+                coords: _compute_coords_and_normals(obj_def),
+
+                ////////////////////
+                //model transform computed multiplying up all the transformations in the object description file
+                model_matrix: _compute_model_matrix(obj_def.id, scene_desc)
+            })
+        })
     };
 }
 
-function _run() {
-    program_running = true;
-    _do_run();
-}
 
-function _do_run(time) {
-    if (program_running) requestAnimationFrame(_do_run);
-    const { objects, Mlookat } = _compute_modelview(objects_info.objects_to_draw, scene_description);
+//this is put in a separate function because it's computed at each animation frame
+function _compute_modelview(scene_config) {
+    const { scene_desc, objects_to_draw } = scene_config;
+    const { model_rot_x, model_rot_y } = get_params();
+    const C = scene_desc.camera;
+    let C_pos = glm.vec3(1),
+        view_matrix = glm.mat4(1);
 
-    Object.assign(objects_info, {
-        objects_to_draw: objects,
-        view_matrix: Mlookat,
-        resolution: [canvas.width, canvas.height]
-    });
-
-    draw_objects(gl, objects_info, time || 0);
-}
-
-function _stop() {
-    program_running = false;
-}
-
-
-function _init_scene_struct(objs_list, scene_desc) {
-    let { objects, Mlookat, lighting } = Object.assign(
-        _compute_modelview(
-            _compute_objects_coords(
-                objs_list,
-                scene_desc
-            ),
-            scene_desc),
-        // _compute_ligthing(scene_desc)
-        Object.keys(scene_desc).reduce((plugs_o, desc_key) => Object.assign(
-            plugs_o,
-            plugins[desc_key] ? get_plugins_desc(plugins, desc_key, scene_desc) : {}
-        ), {})
+    let M_r = T.rotate_axis(glm.vec3(1, 0, 0), model_rot_x).mul(
+        T.rotate_axis(glm.vec3(0, 1, 0), model_rot_y)
     );
 
-    const OI = {
-        objects_to_draw: objects,
-        scene_desc,
-        projection_matrix: T.perspective(90, canvas.width / canvas.height, .1, 99),
-        view_matrix: Mlookat,
-        resolution: [canvas.width, canvas.height],
-        lighting
+    C_pos = glm.vec4(C.position.concat(1.));
+    let C_up = glm.vec4(C.up.concat(0.));
+
+    view_matrix = T.lookAt(C_pos.xyz, glm.vec3(C.center), glm.vec3(C_up.x, C_up.y, C_up.z));
+
+    objects_to_draw.forEach((obj_def) => {
+        obj_def.model_matrix = M_r.mul(_compute_model_matrix(obj_def.id, scene_desc));
+    });
+
+    return {
+        view_matrix
+    };
+}
+
+function _compute_model_matrix(obj_id, scene_desc) {
+    return Object.keys(scene_desc)
+        .filter((scene_desc_key) => scene_desc_key === obj_id)
+        .map((scene_desc_key) => scene_desc[scene_desc_key].transforms || [])
+        .flat()
+        .reduce((M, transform_desc, i, arr) => {
+            let transform_fn = T[transform_desc.type] || (() => glm.mat4(1));
+            let M_ret = M.mul(transform_fn(glm.vec3(transform_desc.amount)));
+
+            return M_ret;
+
+        }, glm.mat4(1))
+}
+
+
+/////////////////////////////////////////////////////
+// RUNNING
+/////////////////////////////////////////////////////
+
+function _run(scene_config) {
+    program_running = true;
+    _do_run(scene_config);
+}
+
+let rafId = null;
+function _do_run(scene_config, time) {
+    const { canvas } = scene_config;
+
+    if (program_running) {
+        rafId = requestAnimationFrame(_do_run.bind(null, scene_config));
+    }
+    else if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+        return;
     }
 
-    DEBUG.print_coords && print_debug(OI, canvas);
-
-    return OI;
+    draw_objects(Object.assign(
+        scene_config,
+        _compute_modelview(scene_config),
+        { resolution: [canvas.width, canvas.height] }
+    ), time || 0);
 }
 
-function _compute_objects_coords(objects, scene_desc) {
-    return objects.map((obj_def) => {
-        return Object.assign(obj_def, {
-            ////////////////////
-            //Coordinates and normals put in a single Float32Array
-            coords: _compute_coords_and_normals(obj_def),
+function _stop(scene_config) {
+    program_running = false;
 
-            ////////////////////
-            //model transform computed multiplying up all the transformations in the object description file
-            model_matrix: _compute_model_matrix(obj_def.id, scene_desc)
-        })
-    });
+    //call plugins' cleanup function
 }
 
+
+
+//MAYBE the following two functions could be put in a separate plugin (?)
 function _compute_coords_and_normals(obj_def) {
     const { coords_dim, coordinates_def } = obj_def;
 
@@ -179,48 +216,4 @@ function _normal(triangle_vertices) {
         c = glm.vec3(triangle_vertices[2]);
 
     return glm.cross(b.sub(a), c.sub(a));
-}
-
-
-//this is put in a separate function because it's computed at each animation frame
-function _compute_modelview(objects, scene_desc) {
-    const { model_rot_x, model_rot_y } = get_params();
-    const C = scene_desc.camera;
-    let C_pos = glm.vec3(1),
-        Mlookat = glm.mat4(1);
-
-    let M_r = T.rotate_axis(glm.vec3(1, 0, 0), model_rot_x).mul(
-        T.rotate_axis(glm.vec3(0, 1, 0), model_rot_y)
-    );
-
-    // C_pos = M_r.mul(glm.vec4(C.position.concat(1)));
-    // let C_up = M_r.mul(glm.vec4(C.up.concat(0)));
-    C_pos = glm.vec4(C.position.concat(1.));
-    let C_up = glm.vec4(C.up.concat(0.));
-
-    Mlookat = T.lookAt(C_pos.xyz, glm.vec3(C.center), glm.vec3(C_up.x, C_up.y, C_up.z));
-
-    objects.forEach((obj_def) => {
-        obj_def.model_matrix = M_r.mul(_compute_model_matrix(obj_def.id, scene_desc));
-        obj_def.model_view_matrix = Mlookat.mul(obj_def.model_matrix);
-    });
-
-    return {
-        objects,
-        Mlookat
-    };
-}
-
-function _compute_model_matrix(obj_id, scene_desc) {
-    return Object.keys(scene_desc)
-        .filter((scene_desc_key) => scene_desc_key === obj_id)
-        .map((scene_desc_key) => scene_desc[scene_desc_key].transforms || [])
-        .flat()
-        .reduce((M, transform_desc, i, arr) => {
-            let transform_fn = T[transform_desc.type] || (() => glm.mat4(1));
-            let M_ret = M.mul(transform_fn(glm.vec3(transform_desc.amount)));
-
-            return M_ret;
-
-        }, glm.mat4(1))
 }

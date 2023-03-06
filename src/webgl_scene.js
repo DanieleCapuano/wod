@@ -1,5 +1,5 @@
-import { buffer_data, create_program, init_vao, setup_indices, set_uniforms } from "./webgl_utils";
-import { plugins } from 'wplug';
+import { create_program, fill_position_buffer, generate_attributes_from_config, init_vao, setup_indices, set_uniforms } from "wbase";
+import { plugins_config_into_shaders_data, plugins_drawloop_callback } from "./plugins";
 
 /*********************************************************************
  * this module is responsible for the scene initialization and management
@@ -15,86 +15,83 @@ export const draw_objects = _draw_objects;
 
 
 ////////////////////////////////////////////////////////////
-let programs_info = null;
-
-function _init_scene_webgl(gl, objects_info) {
-    programs_info = objects_info.objects_to_draw.reduce((prog_info, oi) => {
+/*
+ * we have the following data structure
+   scene_config: {
+    objects_to_draw: [
+        {id: obj1, object_program: {program_info: {...}, ...}},
+        ...
+        {id: objn, object_program: {program_info: {...}, ...}}
+    ]
+   }
+*/
+function _init_scene_webgl(scene_config) {
+    const { gl, objects_to_draw, } = scene_config;
+    objects_to_draw.forEach((obj_config) => {
         const //////////
-            { program_info_def, coords_dim } = oi,
+            { program_info_def, coords_dim, coords, indices } = obj_config,
             { vertex, fragment } = program_info_def.shaders,
             { shaders_data } = program_info_def;
 
-        let shad_data = _plugins_into_shaders_data(shaders_data, objects_info.scene_desc),
-            pi = _init_webgl_program(gl, vertex.code, fragment.code, Object.assign(shad_data, {
-                attributes: Object.keys(shad_data.attributes).reduce((a_obj, attr_key) => {
-                    let ////////////////
-                        attr_def = shad_data.attributes[attr_key],
-                        opts = attr_def.opts;
+        let ///////////////////////////////////////////
+            program_info = fill_position_buffer(
+                gl,
+                _init_webgl_program(
+                    gl,
+                    vertex.code,
+                    fragment.code,
+                    generate_attributes_from_config(
+                        gl,
+                        plugins_config_into_shaders_data(shaders_data),   //loads the plugins config in the "uniforms" and "attributes" fields of program_info structure being built
+                        coords_dim
+                    )
+                ),
+                coords
+            ),
+            index_buffer = indices ? setup_indices(gl, indices) : null;
 
-                    attr_def.opts = [
-                        opts.size || coords_dim,         //size
-                        gl[opts.data_type],  //type
-                        opts.normalized,     //normalized
-                        opts.stride,         //stride
-                        opts.offset          //offset
-                    ];
-                    return Object.assign(a_obj, {
-                        [attr_key]: attr_def
-                    });
-                }, {})
-            }));
-
-        Object.keys(pi.attributes)
-            .filter(attr_key => pi.attributes[attr_key].is_position)
-            .forEach((attr_name) => {
-                buffer_data(gl, {
-                    [attr_name]: oi.coords  //it contains normals as well
-                }, pi);
-            });
-
-        let index_buffer = oi.indices ? setup_indices(gl, oi.indices) : null;
-
-        return Object.assign(prog_info, {
-            [oi.id]: Object.assign({}, oi, {
-                program_info: pi,
-                index_buffer,
-                object_to_draw_ref: oi
-            }),
-            gl
+        Object.assign(obj_config, {
+            object_program: {
+                program_info,
+                index_buffer
+            }
         });
-    }, {});
+    });
 
-    return programs_info;
+    return scene_config;
 }
 
 
-function _draw_objects(gl, objects_info, time) {
-    objects_info.run_callback && objects_info.run_callback(gl, objects_info, time);
+function _draw_objects(scene_config, time) {
+    const { gl } = scene_config;
+    const { view_matrix, projection_matrix, resolution } = scene_config;
 
-    const { view_matrix, projection_matrix, resolution } = objects_info;
-    objects_info.objects_to_draw.forEach((obj) => {
-        const prog_info = programs_info[obj.id],
-            { number_of_points, primitive, program_info } = prog_info,
+    scene_config.draw_loop_callback && scene_config.draw_loop_callback(scene_config, time);
+    scene_config.objects_to_draw.forEach((obj_config) => {
+        const
+            { number_of_points, primitive, object_program, draw_loop_callback } = obj_config,
+            { program_info, index_buffer } = object_program,
             { program, vao } = program_info;
-
-        prog_info.run_callback && prog_info.run_callback(gl, obj, programs_info, time);
 
         gl.useProgram(program);
         gl.bindVertexArray(vao);
+
+        draw_loop_callback && draw_loop_callback(scene_config, obj_config, time);
+        plugins_drawloop_callback(obj_config, scene_config);
+
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         gl.enable(gl.DEPTH_TEST);
 
-        set_uniforms(gl, Object.assign({
+        set_uniforms(gl, {
             u_time: time || 0,
-            u_model: obj.model_matrix.elements,
+            u_model: obj_config.model_matrix.elements,
             u_view: view_matrix.elements,
-            u_modelview: obj.model_view_matrix.elements,
             u_projection: projection_matrix.elements,
             u_resolution: resolution
-        }, _set_uniforms_from_plugins(obj, objects_info)), prog_info);
+        }, object_program);
 
-        if (prog_info.index_buffer) {
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, prog_info.index_buffer);
+        if (index_buffer) {
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
             gl.drawElements(gl[primitive], number_of_points, gl.UNSIGNED_SHORT, 0);
         }
         else {
@@ -105,37 +102,8 @@ function _draw_objects(gl, objects_info, time) {
 
 function _init_webgl_program(gl, vert, frag, program_info) {
     program_info.program = create_program(gl, vert, frag);
-    return init_vao(gl, program_info);
-}
-
-function _plugins_into_shaders_data(shaders_data, scene_desc) {
-    return Object.keys(plugins).reduce((shad_data, plugin_type) => {
-        let ret = shad_data;
-        if (scene_desc[plugin_type]) {
-            const plugin_id = scene_desc[plugin_type].id,
-                plugin = plugins[plugin_type][plugin_id],
-                { config } = plugin;
-            Object.assign(ret, {
-                attributes: Object.assign({}, ret.attributes || {}, config.attributes || {}),
-                uniforms: Object.assign({}, ret.uniforms || {}, config.uniforms || {})
-            });
-        }
-        return ret;
-    }, shaders_data);
-}
-
-function _set_uniforms_from_plugins(obj, objects_info) {
-    const { scene_desc } = objects_info;
-
-    //we could also use the "get_active_plugins" from ./plugins, but in this case it seems more efficient to simply
-    //check the plugins directly
-    return Object.keys(plugins).reduce((o, plugin_type) => {
-        let ret = o;
-        if (scene_desc[plugin_type]) {
-            let plugin_id = scene_desc[plugin_type].id;
-            let plugin = plugins[plugin_type][plugin_id];
-            Object.assign(o, plugin.set_uniforms_values(obj, scene_desc));
-        }
-        return ret;
-    }, {});
+    return Object.assign(
+        program_info,
+        init_vao(gl, program_info)
+    );
 }

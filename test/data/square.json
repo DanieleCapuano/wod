@@ -60,12 +60,6 @@
                         "fn": "Matrix4fv"
                     }
                 },
-                "u_modelview": {
-                    "name": "u_modelview",
-                    "opts": {
-                        "fn": "Matrix4fv"
-                    }
-                },
                 "u_projection": {
                     "name": "u_projection",
                     "opts": {

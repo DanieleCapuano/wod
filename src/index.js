@@ -1,22 +1,17 @@
 import { init_scene, run_scene, stop_scene } from "./scene";
 import { init_data } from "./config_parser";
 import * as Transforms from "./transforms";
-import * as WebGLUtils from './webgl_utils';
 
 /**
- * od : Objects Drawer: a simple drawer with WebGL 2
+ * wod : WebGL2 Objects Drawer: a simple drawer with WebGL 2
  */
 
-// export const od = {
-//     init_data, init_scene, run_scene, stop_scene
-// };
 export {
     init_data,
     init_scene,
     run_scene,
     stop_scene,
-    Transforms,
-    WebGLUtils
+    Transforms
 };
 
 export default {
@@ -24,6 +19,5 @@ export default {
     init_scene,
     run_scene,
     stop_scene,
-    Transforms,
-    WebGLUtils
+    Transforms
 };
