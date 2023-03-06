@@ -61,6 +61,14 @@ function _init_scene_webgl(scene_config) {
     return scene_config;
 }
 
+function _init_webgl_program(gl, vert, frag, program_info) {
+    program_info.program = create_program(gl, vert, frag);
+    return Object.assign(
+        program_info,
+        init_vao(gl, program_info)
+    );
+}
+
 
 function _draw_objects(scene_config, time) {
     const { gl } = scene_config;
@@ -98,12 +106,4 @@ function _draw_objects(scene_config, time) {
             gl.drawArrays(gl[primitive], 0, number_of_points);
         }
     });
-}
-
-function _init_webgl_program(gl, vert, frag, program_info) {
-    program_info.program = create_program(gl, vert, frag);
-    return Object.assign(
-        program_info,
-        init_vao(gl, program_info)
-    );
 }

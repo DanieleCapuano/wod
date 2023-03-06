@@ -110,9 +110,8 @@ function _compute_modelview(scene_config) {
 function _compute_model_matrix(obj_id, scene_desc) {
     return Object.keys(scene_desc)
         .filter((scene_desc_key) => scene_desc_key === obj_id)
-        .map((scene_desc_key) => scene_desc[scene_desc_key].transforms || [])
-        .flat()
-        .reduce((M, transform_desc, i, arr) => {
+        .flatMap((scene_desc_key) => scene_desc[scene_desc_key].transforms || [])
+        .reduce((M, transform_desc) => {
             let transform_fn = T[transform_desc.type] || (() => glm.mat4(1));
             let M_ret = M.mul(transform_fn(glm.vec3(transform_desc.amount)));
 
