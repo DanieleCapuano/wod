@@ -62,7 +62,7 @@ function _plugins_config_into_shaders_data(shaders_data) {
     return _get_active_plugins_a()
         .reduce((shad_data, plugin) => {
             const { config } = plugin;
-            let c = Object.assign({}, config);
+            let c = config();
 
             return Object.assign(shad_data, {
                 attributes: Object.assign({}, shad_data.attributes || {}, c.attributes || {}),

@@ -1,3 +1,5 @@
 {
-    "square_1": "/data/square.json"
+    "square_1": "/data/square.json",
+    "square_2": "/data/square.json",
+    "square_3": "/data/square.json"
 }
