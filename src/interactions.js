@@ -3,7 +3,7 @@ export const listen_to_keys = _listen_to_keys;
 export const auto_animation = _auto_animation;
 export const get_params = _get_params;
 
-const rot_amount = 1;
+const rot_amount = 5;
 let camera_rot_x = 0, camera_rot_y = 0,
     model_rot_x = 0, model_rot_y = 0;
 
@@ -36,7 +36,7 @@ function _auto_animation() {
     // camera_rot_x += rot_amount * .2;
     model_rot_y += rot_amount * .4;
     model_rot_x += rot_amount * .2;
-    
+
     requestAnimationFrame(_auto_animation);
 }
 

@@ -10,12 +10,15 @@ function _init_data(data) {
             _get_url(data.scene_desc_url)
         ]).then((json_files) => {
             let objects = json_files[0],
-                scene_desc = json_files[1];
+                scene_desc = json_files[1],
+                objects_keys = Object.keys(objects);
 
-            Promise.all(Object.keys(objects)
+            Promise.all(objects_keys
                 .map((obj_key) => _get_url(objects[obj_key]))
             )
                 .then((objects_jsons) => {
+                    objects_jsons.forEach((oj, i) => oj.id = objects_keys[i]);
+
                     Promise.all(
                         Object.keys(objects_jsons)
                             .map((obj_key) => {

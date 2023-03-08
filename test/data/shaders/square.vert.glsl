@@ -11,6 +11,7 @@ uniform mat4 u_modelview;
 uniform mat4 u_projection;
 
 #include "lighting.vert"
+#include "antialiasing.vert"
 
 void main() {
     mat4 M = u_view * u_model;

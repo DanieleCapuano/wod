@@ -19,9 +19,9 @@ export const draw_objects = _draw_objects;
  * we have the following data structure
    scene_config: {
     objects_to_draw: [
-        {id: obj1, object_program: {program_info: {...}, ...}},
+        {id: obj1, object_program: {program_info: {program: ..., vao: ...}, ...}},
         ...
-        {id: objn, object_program: {program_info: {...}, ...}}
+        {id: objn, object_program: {program_info: {program: ..., vao: ...}, ...}}
     ]
    }
 */
@@ -74,6 +74,11 @@ function _draw_objects(scene_config, time) {
     const { gl } = scene_config;
     const { view_matrix, projection_matrix, resolution } = scene_config;
 
+    gl.clearColor(0, 0, 0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    gl.enable(gl.DEPTH_TEST);
+
     scene_config.draw_loop_callback && scene_config.draw_loop_callback(scene_config, time);
     scene_config.objects_to_draw.forEach((obj_config) => {
         const
@@ -85,18 +90,15 @@ function _draw_objects(scene_config, time) {
         gl.bindVertexArray(vao);
 
         draw_loop_callback && draw_loop_callback(scene_config, obj_config, time);
-        plugins_drawloop_callback(obj_config, scene_config);
+        let draw_o = plugins_drawloop_callback(obj_config, scene_config);
 
-        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-        gl.enable(gl.DEPTH_TEST);
-
-        set_uniforms(gl, {
+        set_uniforms(gl, Object.assign({
             u_time: time || 0,
             u_model: obj_config.model_matrix.elements,
             u_view: view_matrix.elements,
             u_projection: projection_matrix.elements,
             u_resolution: resolution
-        }, object_program);
+        }, draw_o.uniforms), object_program);
 
         if (index_buffer) {
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);
@@ -105,5 +107,8 @@ function _draw_objects(scene_config, time) {
         else {
             gl.drawArrays(gl[primitive], 0, number_of_points);
         }
+
+        gl.useProgram(null);
+        gl.bindVertexArray(null);
     });
 }

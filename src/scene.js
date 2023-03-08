@@ -31,15 +31,18 @@ function _init_scene(scene_config) {
     if (!canvas || !scene_config) return;
 
     let gl = scene_config.gl || canvas.getContext('webgl2', {
-        desynchronized: true, //hints the user agent to reduce the latency by desynchronizing the canvas paint cycle from the event loop
-        powerPreference: 'high-performance'
+        // desynchronized: true, //hints the user agent to reduce the latency by desynchronizing the canvas paint cycle from the event loop
+        // powerPreference: 'high-performance'
     });
     scene_config.gl = gl;
 
-    //the "scene_config" object will be incremented with all the needed data and that's all we'll need!
+    //the "scene_config" object will be augmented 
+    //with all the needed data and that's all we'll need!
 
     //plugins could generate coordinates or change the configuration descriptions
     scene_config = setup_active_plugins(scene_config);
+
+    //computes coordinates, normals and whatever
     scene_config = _init_scene_struct(scene_config);
 
     DEBUG.interactions && listen_to_keys();
@@ -134,6 +137,12 @@ let rafId = null;
 function _do_run(scene_config, time) {
     const { canvas } = scene_config;
 
+    draw_objects(Object.assign(
+        scene_config,
+        _compute_modelview(scene_config),
+        { resolution: [canvas.width, canvas.height] }
+    ), time || 0);
+
     if (program_running) {
         rafId = requestAnimationFrame(_do_run.bind(null, scene_config));
     }
@@ -141,12 +150,6 @@ function _do_run(scene_config, time) {
         cancelAnimationFrame(rafId);
         return;
     }
-
-    draw_objects(Object.assign(
-        scene_config,
-        _compute_modelview(scene_config),
-        { resolution: [canvas.width, canvas.height] }
-    ), time || 0);
 }
 
 function _stop(scene_config) {

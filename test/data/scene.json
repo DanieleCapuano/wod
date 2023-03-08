@@ -16,6 +16,9 @@
             0
         ]
     },
+    "antialiasing": {
+        "id": "fs_derivatives"
+    },
     "lighting": {
         "id": "blinn_phong",
         "ambient": {
@@ -30,11 +33,11 @@
             {
                 "type": "point",
                 "intensity": 0.9,
-                "specular_exp": 4,
+                "specular_exp": 200,
                 "position": [
-                    100.5,
-                    0,
-                    10
+                    60.5,
+                    10,
+                    50
                 ],
                 "color": [
                     0.9,
@@ -45,22 +48,45 @@
             {
                 "type": "point",
                 "intensity": 0.6,
-                "specular_exp": 3,
+                "specular_exp": 300,
                 "position": [
                     -100.5,
-                    -100,
-                    2
+                    -10,
+                    5
                 ],
                 "color": [
                     0.2,
                     0.3,
                     0.9
                 ]
+            },
+            {
+                "type": "point",
+                "intensity": 0.5,
+                "specular_exp": 300,
+                "position": [
+                    -50.5,
+                    10,
+                    10
+                ],
+                "color": [
+                    0.7,
+                    0.3,
+                    0.4
+                ]
             }
         ]
     },
     "square_1": {
         "transforms": [
+            {
+                "type": "translate",
+                "amount": [
+                    0,
+                    0,
+                    0
+                ]
+            },
             {
                 "type": "scale",
                 "amount": [
@@ -70,11 +96,59 @@
                 ]
             },
             {
+                "type": "rotate",
+                "amount": [
+                    25,
+                    113,
+                    0
+                ]
+            }
+        ]
+    },
+    "square_2": {
+        "transforms": [
+            {
+                "type": "translate",
+                "amount": [
+                    4,
+                    0,
+                    0.5
+                ]
+            },
+            {
+                "type": "scale",
+                "amount": [
+                    4.5,
+                    4.5,
+                    4.5
+                ]
+            },
+            {
+                "type": "rotate",
+                "amount": [
+                    25,
+                    113,
+                    0
+                ]
+            }
+        ]
+    },
+    "square_3": {
+        "transforms": [
+            {
                 "type": "translate",
                 "amount": [
                     0,
                     0,
-                    0
+                    -1
+                ]
+            },
+            {
+                "type": "scale",
+                "amount": [
+                    1.5,
+                    1.5,
+                    1.5
                 ]
             },
             {

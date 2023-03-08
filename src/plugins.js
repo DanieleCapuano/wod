@@ -7,22 +7,22 @@ export const get_plugins_model = _get_plugins_model;
 export const plugins_config_into_shaders_data = _plugins_config_into_shaders_data;
 export const plugins_drawloop_callback = _plugins_drawloop_callback;
 
-function _setup_active_plugins(config) {
-    const { scene_desc, objects_desc } = config;
-    return Object.keys(plugins).reduce((c, plugin_type) => {
-        //a plugin could be requested by either the scene description or by single objects
-        let requested_by_object = objects_desc.filter(o => o[plugin_type] !== undefined);
-        if (scene_desc[plugin_type] || requested_by_object.length) {
-            return requested_by_object.concat(scene_desc).reduce((c_within, o) => {
-                const //////////////////////////////
-                    plugin_id = (o[plugin_type] || {}).id,
-                    plugin = plugin_id ? plugins[plugin_type][plugin_id] : null;
+const _active_plugins = [];
 
-                return Object.assign(
-                    c_within,
-                    (plugin || { set_active: (b, o) => o }).set_active(true, c_within)  //set_active will return the config
-                );
-            }, c)
+function _setup_active_plugins(config) {
+    const { scene_desc } = config;
+    return Object.keys(plugins).reduce((c, plugin_type) => {
+        //currently plugins must be declared in the scene config, at "scene level" only:
+        //since each scene has a config object for each object in the scene as well, 
+        //objects could contain options data for specific plugins
+        //while the plugin "dependency" can be declared as scene level in the config file
+        if (scene_desc[plugin_type]) {
+            const //////////////////////////////
+                plugin_id = scene_desc[plugin_type].id,
+                plugin = plugins[plugin_type][plugin_id];
+
+            _active_plugins.push(plugin);
+            return plugin.set_active(true, c);  //set_active will return the config
         }
         return c;
     }, config);
@@ -41,9 +41,8 @@ function _get_active_plugins_o() {
         }, {});
 }
 
-
 function _get_active_plugins_a() {
-    return Object.keys(plugins)
+    return _active_plugins || Object.keys(plugins)
         .flatMap(plug_type => {
             return Object.keys(plugins[plug_type])
                 .filter(plug_id => plugins[plug_type][plug_id].get_active())
@@ -52,7 +51,7 @@ function _get_active_plugins_a() {
 }
 
 function _get_plugins_model(desc) {
-    return _get_active_plugins_a(plugins)
+    return _get_active_plugins_a()
         .reduce(
             (o, plugin) => Object.assign(o, plugin.get_model(desc)),
             {}
@@ -60,17 +59,27 @@ function _get_plugins_model(desc) {
 }
 
 function _plugins_config_into_shaders_data(shaders_data) {
-    return get_active_plugins_as_array(plugins).reduce((shad_data, plugin) => {
-        const { config } = plugin;
-        return Object.assign(shad_data, {
-            attributes: Object.assign({}, shad_data.attributes || {}, config.attributes || {}),
-            uniforms: Object.assign({}, shad_data.uniforms || {}, config.uniforms || {})
-        });
-    }, shaders_data);
+    return _get_active_plugins_a()
+        .reduce((shad_data, plugin) => {
+            const { config } = plugin;
+            let c = Object.assign({}, config);
+
+            return Object.assign(shad_data, {
+                attributes: Object.assign({}, shad_data.attributes || {}, c.attributes || {}),
+                uniforms: Object.assign({}, shad_data.uniforms || {}, c.uniforms || {})
+            });
+        }, shaders_data);
 }
 
 function _plugins_drawloop_callback(obj_config, scene_config) {
-    get_active_plugins_as_array(plugins).forEach(plugin => {
-        plugin.draw_loop_callback && plugin.draw_loop_callback(obj_config, scene_config);
-    });
+    return _get_active_plugins_a()
+        .reduce((o, plugin) => {
+            let p_o = plugin.draw_loop_callback ? plugin.draw_loop_callback(obj_config, scene_config) : { uniforms: {} };
+            return Object.assign(
+                o,
+                {
+                    uniforms: Object.assign(o.uniforms, ((p_o || {}).uniforms || {}))
+                }
+            );
+        }, { uniforms: {} });
 }
