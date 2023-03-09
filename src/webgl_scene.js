@@ -69,7 +69,7 @@ function _draw_objects(scene_config, time) {
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     gl.enable(gl.DEPTH_TEST);
 
-    scene_config.draw_loop_callback && scene_config.draw_loop_callback(scene_config, time);
+    scene_config = (scene_config.draw_loop_callback && scene_config.draw_loop_callback(scene_config, time)) || scene_config;
     scene_config.objects_to_draw.forEach((obj_config) => {
         const
             { number_of_points, primitive, object_program, draw_loop_callback } = obj_config,
@@ -79,16 +79,16 @@ function _draw_objects(scene_config, time) {
         gl.useProgram(program);
         gl.bindVertexArray(vao);
 
-        draw_loop_callback && draw_loop_callback(scene_config, obj_config, time);
-        let draw_o = plugins_drawloop_callback(obj_config, scene_config);
+        scene_config = (draw_loop_callback && draw_loop_callback(scene_config, obj_config, time)) || scene_config;
+        scene_config = plugins_drawloop_callback(obj_config, scene_config);
 
-        set_uniforms(gl, Object.assign({
+        set_uniforms(gl, {
             u_time: time || 0,
             u_model: obj_config.model_matrix.elements,
             u_view: view_matrix.elements,
             u_projection: projection_matrix.elements,
             u_resolution: resolution
-        }, draw_o.uniforms), object_program);
+        }, object_program);
 
         if (index_buffer) {
             gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, index_buffer);

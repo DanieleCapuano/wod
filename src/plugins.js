@@ -74,12 +74,7 @@ function _plugins_config_into_shaders_data(shaders_data) {
 function _plugins_drawloop_callback(obj_config, scene_config) {
     return _get_active_plugins_a()
         .reduce((o, plugin) => {
-            let p_o = plugin.draw_loop_callback ? plugin.draw_loop_callback(obj_config, scene_config) : { uniforms: {} };
-            return Object.assign(
-                o,
-                {
-                    uniforms: Object.assign(o.uniforms, ((p_o || {}).uniforms || {}))
-                }
-            );
-        }, { uniforms: {} });
+            let p_o = plugin.draw_loop_callback ? plugin.draw_loop_callback(obj_config, scene_config) : {};
+            return Object.assign(o, p_o);
+        }, scene_config);
 }
