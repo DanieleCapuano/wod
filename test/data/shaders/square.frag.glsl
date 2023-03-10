@@ -9,6 +9,7 @@ out vec4 outColor;
 
 #include "lighting.frag"
 #include "antialiasing.frag"
+#include "postprocessing.frag"
 
 void main() {
     vec2 st = gl_FragCoord.xy / u_resolution;
@@ -16,12 +17,13 @@ void main() {
     vec3 color = vec3(0.0);
     float t = u_time / 1000.0;
     
-    // st = aastep2d(0.2, st * abs(sin(t * 10.0) * 20.0));
-    // vec3 c = vec3(abs(st.x * sin(t)), abs(st.y * cos(t)), min(st.x, st.y));
-    
-    // color = mix(c, compute_lighting_frag(color), sin(t) * 0.5 + 0.5);
-    color = compute_lighting_frag(color);
-    color = mix(vec3(st.x, st.y, st.x * st.y), color, sin(t) * 0.5 + 0.5);
+    vec3 tex = texture(u_tex, st).xyz;
+    if (u_on_fbo == 1) {
+        color = (tex + vec3(st.x, st.y, st.x * st.y)) * fract(sin(u_time * 0.005));
+    }
+    else {
+        color = compute_lighting_frag(color) * tex;
+    }
     
     outColor = vec4(color, 1.0);
 }

@@ -80,7 +80,7 @@ function _init_data(data) {
 //AND 
 //we'll use a plugin-based approach using the wplug library
 //
-//in wplug we've plugins belonging to "types" (e.g. lighting, antialias, ...) and specific "ids" (e.g. "blinn_phong")
+//in wplug we've plugins belonging to "types" (e.g. lighting, antialiasing, ...) and specific "ids" (e.g. "blinn_phong")
 //in each object's shader, when a plugin must be included, we can write a line like
 //include "lighting.vert"
 //then the plugin_id is taken from the scene description json (e.g. {"lighting": {"id": "blinn_phong"}})

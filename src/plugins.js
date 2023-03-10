@@ -5,7 +5,9 @@ export const get_active_plugins_as_object = _get_active_plugins_o;
 export const get_active_plugins_as_array = _get_active_plugins_a;
 export const get_plugins_model = _get_plugins_model;
 export const plugins_config_into_shaders_data = _plugins_config_into_shaders_data;
+export const plugins_program_init = _plugins_program_init;
 export const plugins_drawloop_callback = _plugins_drawloop_callback;
+export const plugins_clear_all = _plugins_clear_all;
 
 const _active_plugins = [];
 
@@ -71,10 +73,26 @@ function _plugins_config_into_shaders_data(shaders_data) {
         }, shaders_data);
 }
 
+function _plugins_program_init(scene_config) {
+    return _get_active_plugins_a()
+        .reduce(
+            (o, plugin) => plugin.program_init ? plugin.program_init(o) : o,
+            scene_config
+        );
+}
+
 function _plugins_drawloop_callback(obj_config, scene_config) {
     return _get_active_plugins_a()
         .reduce((o, plugin) => {
             let p_o = plugin.draw_loop_callback ? plugin.draw_loop_callback(obj_config, scene_config) : {};
             return Object.assign(o, p_o);
         }, scene_config);
+}
+
+function _plugins_clear_all(scene_config) {
+    return _get_active_plugins_a()
+        .reduce(
+            (o, plugin) => plugin.cleanup ? plugin.cleanup(o) : o,
+            scene_config
+        );
 }

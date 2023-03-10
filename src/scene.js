@@ -4,7 +4,7 @@ import * as T from './transforms';
 import { auto_animation, listen_to_keys, get_params } from "./interactions";
 
 import { draw_objects, init_scene_webgl } from "./webgl_scene";
-import { get_plugins_model, setup_active_plugins } from "./plugins";
+import { get_plugins_model, plugins_clear_all, setup_active_plugins } from "./plugins";
 
 /*********************************************************************
  * this module is responsible for the scene initialization
@@ -111,9 +111,10 @@ function _compute_modelview(scene_config) {
 }
 
 function _compute_model_matrix(obj_id, scene_desc) {
-    return Object.keys(scene_desc)
-        .filter((scene_desc_key) => scene_desc_key === obj_id)
-        .flatMap((scene_desc_key) => scene_desc[scene_desc_key].transforms || [])
+    let objs = scene_desc.objects;
+    return Object.keys(objs)
+        .filter((obj_key) => obj_key === obj_id)
+        .flatMap((obj_key) => objs[obj_key].transforms || [])
         .reduce((M, transform_desc) => {
             let transform_fn = T[transform_desc.type] || (() => glm.mat4(1));
             let M_ret = M.mul(transform_fn(glm.vec3(transform_desc.amount)));
@@ -135,7 +136,7 @@ function _run(scene_config) {
 
 let rafId = null;
 function _do_run(scene_config, time) {
-    const { canvas } = scene_config;
+    const { canvas, gl } = scene_config;
 
     draw_objects(Object.assign(
         scene_config,
@@ -143,19 +144,22 @@ function _do_run(scene_config, time) {
         { resolution: [canvas.width, canvas.height] }
     ), time || 0);
 
-    if (program_running) {
+    if (program_running && !gl.isContextLost()) {
         rafId = requestAnimationFrame(_do_run.bind(null, scene_config));
     }
-    else if (rafId !== null) {
-        cancelAnimationFrame(rafId);
+    else {
+        rafId !== null && cancelAnimationFrame(rafId);
+        rafId = null;
         return;
     }
 }
+
 
 function _stop(scene_config) {
     program_running = false;
 
     //call plugins' cleanup function
+    return plugins_clear_all(scene_config);
 }
 
 
