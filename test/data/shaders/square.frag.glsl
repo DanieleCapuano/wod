@@ -9,7 +9,7 @@ out vec4 outColor;
 
 #include "lighting.blinn_phong.frag"
 #include "antialiasing.fs_derivatives.frag"
-#include "postprocessing.fbo.frag"
+#include "antialiasing.postp_gaussian.frag"
 
 void main() {
     vec2 st = gl_FragCoord.xy / u_resolution;

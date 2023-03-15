@@ -1,5 +1,6 @@
 export const init_data = _init_data;
 import { plugins } from 'wplug';
+import { set_plugins_requires_into_config } from './plugins';
 
 function _init_data(data) {
     return new Promise((res, err) => {
@@ -12,6 +13,8 @@ function _init_data(data) {
             let objects = json_files[0],
                 scene_desc = json_files[1],
                 objects_keys = Object.keys(objects);
+
+            scene_desc = set_plugins_requires_into_config(scene_desc);
 
             Promise.all(objects_keys
                 .map((obj_key) => _get_url(objects[obj_key]))
