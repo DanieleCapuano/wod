@@ -17,13 +17,7 @@
         ]
     },
     "antialiasing": {
-        "id": "fs_derivatives"
-    },
-    "postprocessing": {
-        "id": "fbo",
-        "framebuffers_n": 5,
-        "framebuffers_offset": 1,
-        "base_active_texture": 0
+        "id": "postp_gaussian"
     },
     "lighting": {
         "id": "blinn_phong",

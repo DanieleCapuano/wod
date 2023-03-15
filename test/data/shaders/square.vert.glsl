@@ -10,8 +10,8 @@ uniform mat4 u_view;
 uniform mat4 u_modelview;
 uniform mat4 u_projection;
 
-#include "lighting.vert"
-#include "antialiasing.vert"
+#include "lighting.blinn_phong.vert"
+#include "antialiasing.fs_derivatives.vert"
 
 void main() {
     mat4 M = u_view * u_model;

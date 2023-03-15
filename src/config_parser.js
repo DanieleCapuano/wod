@@ -1,5 +1,6 @@
 export const init_data = _init_data;
 import { plugins } from 'wplug';
+import { set_plugins_requires_into_config } from './plugins';
 
 function _init_data(data) {
     return new Promise((res, err) => {
@@ -12,6 +13,8 @@ function _init_data(data) {
             let objects = json_files[0],
                 scene_desc = json_files[1],
                 objects_keys = Object.keys(objects);
+
+            scene_desc = set_plugins_requires_into_config(scene_desc);
 
             Promise.all(objects_keys
                 .map((obj_key) => _get_url(objects[obj_key]))
@@ -46,8 +49,12 @@ function _init_data(data) {
                                         { program_info_def } = o,
                                         { shaders } = program_info_def;
 
-                                    shaders.vertex.code = glsl_replace_includes(scene_desc, shaders_code.vertex, plugins);
-                                    shaders.fragment.code = glsl_replace_includes(scene_desc, shaders_code.fragment, plugins);
+                                    shaders_code.vertex = glsl_includes_for_active_plugins(scene_desc, shaders_code.vertex, 'vert', plugins);
+                                    shaders.vertex.code = glsl_replace_includes(shaders_code.vertex, plugins);
+
+                                    shaders_code.fragment = glsl_includes_for_active_plugins(scene_desc, shaders_code.fragment, 'frag', plugins);
+                                    shaders.fragment.code = glsl_replace_includes(shaders_code.fragment, plugins);
+
                                     if (--_n_objects === 0) _loops_end();
                                 },
                                 shaders_code_map = shaders_code_arr_of_objs[i],
@@ -82,17 +89,47 @@ function _init_data(data) {
 //
 //in wplug we've plugins belonging to "types" (e.g. lighting, antialiasing, ...) and specific "ids" (e.g. "blinn_phong")
 //in each object's shader, when a plugin must be included, we can write a line like
-//include "lighting.vert"
-//then the plugin_id is taken from the scene description json (e.g. {"lighting": {"id": "blinn_phong"}})
+//include "lighting.blinn_phong.vert"
+//
+//as you can see we have a plugin_type.plugin_id.shader_type pattern:
 //so we can take the specific shader from the plugin and plug it into our current shader. Cool!
 //
 //TODO maybe a easier way to manage that would be to replace the line "main(...)" with a new line where the plugin code is pasted
 //in this way we'll remove the requirement of having the include line matching the plugins structure
-function glsl_replace_includes(scene_desc, src, plugins) {
-    return src.replace(/#include\s+\"(\w+).?-?_?(\w+)\"/g, (m, plugin_type, shader_type) => {
-        let plugin_id = scene_desc[plugin_type].id;
+const INCLUDE_REGEXP = /#include\s+\"(\w+).?-?_?(\w+).?-?_?(\w+)\"/g;
+function glsl_replace_includes(src, plugins) {
+    return src.replace(INCLUDE_REGEXP, (m, plugin_type, plugin_id, shader_type) => {
         return plugins[plugin_type][plugin_id].shaders[shader_type];
     });
+}
+
+function glsl_includes_for_active_plugins(scene_desc, src, src_type, plugins) {
+    return Object.keys(scene_desc)
+        .reduce((str, plugin_type) => {
+            let ret_str = str;
+            if (plugins[plugin_type]) {
+                //is a plugin type
+                let plugin_id = scene_desc[plugin_type].id,
+                    INCLUDE_SEP_TOKEN = '.?-?_?',
+                    NEEDED_INCLUDE_REGEXP = '#include\\s+\\"' + plugin_type + INCLUDE_SEP_TOKEN + plugin_id + INCLUDE_SEP_TOKEN + src_type + '\\"',
+                    NEEDED_INCLUDE_STR = '#include "' + plugin_type + '.' + plugin_id + '.' + src_type + '"',
+                    SPLIT_TOKEN = "void main() {";
+
+                if (!str.match(new RegExp(NEEDED_INCLUDE_REGEXP, "g"))) {
+                    //there isn't our needed include directive in shader: we'll generate it
+                    let any_includes = str.match(INCLUDE_REGEXP);
+                    if (any_includes) {
+                        //if there are other includes we'll put our new include before them
+                        SPLIT_TOKEN = any_includes[0];
+                    }
+
+                    let sp_str = str.split(SPLIT_TOKEN);
+                    ret_str = sp_str[0] + '\n' + NEEDED_INCLUDE_STR + '\n' + SPLIT_TOKEN + '\n' + sp_str[1];
+                }
+            }
+
+            return ret_str;
+        }, src);
 }
 
 function _get_url(url, type) {
