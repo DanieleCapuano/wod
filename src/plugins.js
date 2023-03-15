@@ -11,13 +11,40 @@ export const plugins_clear_all = _plugins_clear_all;
 
 const _active_plugins = [];
 
+//currently plugins must be declared in the scene config, at "scene level" only:
+//since each scene has a config object for each object in the scene as well,
+//objects could contain options data for specific plugins
+//while the plugin "dependency" can be declared as scene level in the config file
 function _setup_active_plugins(config) {
     const { scene_desc } = config;
+
+    //for simplicity we'll do a two-pass algorithm 
+    //(a more efficient algorithm could activate the plugins while browsing them in scene_desc): 
+
+    //1. first let's fill scene_desc with generated plugins' configurations got from "requires"
+    Object.keys(scene_desc).forEach(sd_key => {
+        if (plugins[sd_key]) {
+            //sd_key is a plugin
+            let plugin = plugins[sd_key],
+                reqs = plugin.requires;
+            if (reqs) {
+                reqs = Array.isArray(reqs) ? reqs : [reqs];
+                reqs.forEach(req_plugin_desc => {
+                    //each requires element will be in the form {"plugin_type": {"id": plugin_id, /*other options*/}}
+                    Object
+                        .keys(req_plugin_desc)
+                        .filter(p_key => scene_desc[p_key] === undefined)
+                        .forEach(p_key => Object.assign(scene_desc, {
+                            [p_key]: req_plugin_desc[p_key]
+                        }))
+                });
+            }
+
+        }
+    });
+
+    //2. let's activate each plugin
     return Object.keys(plugins).reduce((c, plugin_type) => {
-        //currently plugins must be declared in the scene config, at "scene level" only:
-        //since each scene has a config object for each object in the scene as well, 
-        //objects could contain options data for specific plugins
-        //while the plugin "dependency" can be declared as scene level in the config file
         if (scene_desc[plugin_type]) {
             const //////////////////////////////
                 plugin_id = scene_desc[plugin_type].id,

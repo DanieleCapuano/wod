@@ -7,9 +7,9 @@ uniform float u_time;
 uniform vec2 u_resolution;
 out vec4 outColor;
 
-#include "lighting.frag"
-#include "antialiasing.frag"
-#include "postprocessing.frag"
+#include "lighting.blinn_phong.frag"
+#include "antialiasing.fs_derivatives.frag"
+#include "postprocessing.fbo.frag"
 
 void main() {
     vec2 st = gl_FragCoord.xy / u_resolution;
