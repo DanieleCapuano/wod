@@ -1,0 +1,28 @@
+{
+    "name": "wod",
+    "version": "1.0.0",
+    "main": "dist/wod.js",
+    "scripts": {
+        "build": "rimraf dist && webpack --config webpack.config.js",
+        "build-watch": "rimraf dist && webpack -w --config webpack.config.js",
+        "install-test": "cd test && npm i",
+        "build-test": "cd test && rimraf dist && webpack --config webpack.config_test.js",
+        "build-test-watch": "cd test && rimraf dist && webpack -w --config webpack.config_test.js",
+        "test": "npm run build-test && cd test && http-server . -p 3133 -o"
+    },
+    "devDependencies": {
+        "glm-js": "^0.0.6-c",
+        "wbase": "git+https://github.com/DanieleCapuano/wbase.git#master",
+        "wplug": "https://github.com/DanieleCapuano/wplug#master"
+    },
+    "dependencies": {
+        "copy-webpack-plugin": "11.0.0",
+        "css-loader": "^6.7.3",
+        "node-sass": "^7.0.1",
+        "sass-loader": "^13.2.0",
+        "style-loader": "^3.3.1",
+        "webpack": "^5.75.0",
+        "webpack-cli": "^4.10.0",
+        "webpack-glsl-loader": "^1.0.1"
+    }
+}

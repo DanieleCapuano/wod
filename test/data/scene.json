@@ -16,6 +16,12 @@
             0
         ]
     },
+    "postprocessing": {
+        "id": "fbo",
+        "framebuffers_n": 1,
+        "framebuffers_offset": 1,
+        "base_active_texture": 0
+    },
     "antialiasing": {
         "id": "postp_gaussian"
     },
