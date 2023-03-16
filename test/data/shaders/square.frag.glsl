@@ -17,12 +17,14 @@ void main() {
     vec3 color = vec3(0.0);
     float t = u_time / 1000.0;
     
-    vec3 tex = texture(u_tex, st).xyz;
-    if (u_on_fbo == 1) {
-        color = (tex + vec3(st.x, st.y, st.x * st.y)) * fract(sin(u_time * 0.005));
+    if (u_on_fbo != 1) {
+        color = postp_gaussian_frag(color, st, 560.0, 16.0);
     }
     else {
-        color = compute_lighting_frag(color) * tex;
+        // vec3 tex = texture(u_tex, st).xyz;
+        // color = (tex + vec3(st.x, st.y, st.x * st.y)) * fract(sin(u_time * 0.005));
+        // color = mix(tex, compute_lighting_frag(color), abs(sin(u_time * 0.002)));
+        color = compute_lighting_frag(color);
     }
     
     outColor = vec4(color, 1.0);

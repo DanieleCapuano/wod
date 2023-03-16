@@ -17,22 +17,27 @@ function _set_plugins_requires_into_config(scene_desc) {
     Object.keys(scene_desc).forEach(plugin_type => {
         if (plugins[plugin_type]) {
             //sd_key is a plugin
-            let plugin_id = scene_desc[plugin_type].id,
-                plugin = plugins[plugin_type][plugin_id],
-                reqs = plugin.requires;
-            if (reqs) {
-                reqs = Array.isArray(reqs) ? reqs : [reqs];
-                reqs.forEach(req_plugin_desc => {
-                    //each requires element will be in the form {"plugin_type": {"id": plugin_id, /*other options*/}}
-                    Object
-                        .keys(req_plugin_desc)
-                        .filter(p_key => scene_desc[p_key] === undefined)
-                        .forEach(p_key => Object.assign(scene_desc, {
-                            [p_key]: req_plugin_desc[p_key]
-                        }))
-                });
-            }
-
+            scene_desc[plugin_type] = Array.isArray(scene_desc[plugin_type]) ? scene_desc[plugin_type] : [scene_desc[plugin_type]];
+            scene_desc[plugin_type].forEach((plugin_with_type) => {
+                let plugin_id = plugin_with_type.id,
+                    plugin = plugins[plugin_type][plugin_id],
+                    reqs = plugin.requires;
+                if (reqs) {
+                    reqs = Array.isArray(reqs) ? reqs : [reqs];
+                    reqs.forEach(req_plugin_desc => {
+                        //each requires element will be in the form {"plugin_type": {"id": plugin_id, /*other options*/}}
+                        Object
+                            .keys(req_plugin_desc)
+                            .filter(p_key => scene_desc[p_key] === undefined)
+                            .forEach(p_key => Object.assign(scene_desc,
+                                {
+                                    [p_key]: req_plugin_desc[p_key]
+                                },
+                                scene_desc[p_key] || {} //if scene_desc already had defined the same plugin config, it wins
+                            ));
+                    });
+                }
+            })
         }
     });
 
@@ -49,12 +54,14 @@ function _setup_active_plugins(config) {
     //let's activate each plugin
     return Object.keys(plugins).reduce((c, plugin_type) => {
         if (scene_desc[plugin_type]) {
-            const //////////////////////////////
-                plugin_id = scene_desc[plugin_type].id,
-                plugin = plugins[plugin_type][plugin_id];
+            scene_desc[plugin_type] = Array.isArray(scene_desc[plugin_type]) ? scene_desc[plugin_type] : [scene_desc[plugin_type]];
+            return scene_desc[plugin_type].reduce((cc, plugin_with_type) => {
+                let plugin_id = plugin_with_type.id,
+                    plugin = plugins[plugin_type][plugin_id];
 
-            _active_plugins.push(plugin);
-            return plugin.set_active(true, c);  //set_active will return the config
+                _active_plugins.push(plugin);
+                return plugin.set_active(true, cc);  //set_active will return the config
+            }, c);
         }
         return c;
     }, config);

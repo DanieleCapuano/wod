@@ -109,23 +109,26 @@ function glsl_includes_for_active_plugins(scene_desc, src, src_type, plugins) {
             let ret_str = str;
             if (plugins[plugin_type]) {
                 //is a plugin type
-                let plugin_id = scene_desc[plugin_type].id,
-                    INCLUDE_SEP_TOKEN = '.?-?_?',
-                    NEEDED_INCLUDE_REGEXP = '#include\\s+\\"' + plugin_type + INCLUDE_SEP_TOKEN + plugin_id + INCLUDE_SEP_TOKEN + src_type + '\\"',
-                    NEEDED_INCLUDE_STR = '#include "' + plugin_type + '.' + plugin_id + '.' + src_type + '"',
-                    SPLIT_TOKEN = "void main() {";
+                scene_desc[plugin_type] = Array.isArray(scene_desc[plugin_type]) ? scene_desc[plugin_type] : [scene_desc[plugin_type]];
+                scene_desc[plugin_type].forEach((plugin_with_type) => {
+                    let plugin_id = plugin_with_type.id,
+                        INCLUDE_SEP_TOKEN = '.?-?_?',
+                        NEEDED_INCLUDE_REGEXP = '#include\\s+\\"' + plugin_type + INCLUDE_SEP_TOKEN + plugin_id + INCLUDE_SEP_TOKEN + src_type + '\\"',
+                        NEEDED_INCLUDE_STR = '#include "' + plugin_type + '.' + plugin_id + '.' + src_type + '"',
+                        SPLIT_TOKEN = "void main() {";
 
-                if (!str.match(new RegExp(NEEDED_INCLUDE_REGEXP, "g"))) {
-                    //there isn't our needed include directive in shader: we'll generate it
-                    let any_includes = str.match(INCLUDE_REGEXP);
-                    if (any_includes) {
-                        //if there are other includes we'll put our new include before them
-                        SPLIT_TOKEN = any_includes[0];
+                    if (!str.match(new RegExp(NEEDED_INCLUDE_REGEXP, "g"))) {
+                        //there isn't our needed include directive in shader: we'll generate it
+                        let any_includes = str.match(INCLUDE_REGEXP);
+                        if (any_includes) {
+                            //if there are other includes we'll put our new include before them
+                            SPLIT_TOKEN = any_includes[0];
+                        }
+
+                        let sp_str = str.split(SPLIT_TOKEN);
+                        ret_str = sp_str[0] + '\n' + NEEDED_INCLUDE_STR + '\n' + SPLIT_TOKEN + '\n' + sp_str[1];
                     }
-
-                    let sp_str = str.split(SPLIT_TOKEN);
-                    ret_str = sp_str[0] + '\n' + NEEDED_INCLUDE_STR + '\n' + SPLIT_TOKEN + '\n' + sp_str[1];
-                }
+                });
             }
 
             return ret_str;
