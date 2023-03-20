@@ -114,7 +114,7 @@ function _compute_model_matrix(obj_id, scene_desc) {
         M = glm.mat4(1);
     for (let i = 0; i < objs_keys.length; i++) {
         if (objs_keys[i] === obj_id) {
-            let tr = objs[objs_keys[i]];
+            let tr = objs[objs_keys[i]].transforms;
             for (let j = 0; j < tr.length; j++) {
                 let transform_desc = tr[j],
                     transform_fn = T[transform_desc.type] || (() => glm.mat4(1));

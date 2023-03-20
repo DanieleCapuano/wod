@@ -19,9 +19,17 @@
     "geometry": {
         "id": "quad"
     },
-    "antialiasing": {
-        "id": "postp_gaussian"
-    },
+    "antialiasing": [
+        {
+            "id": "postp_gaussian",
+            "framebuffers_n": 5,
+            "framebuffers_offset": 1,
+            "base_active_texture": 0
+        },
+        {
+            "id": "fs_derivatives"
+        }
+    ],
     "lighting": {
         "id": "blinn_phong",
         "ambient": {
@@ -53,9 +61,9 @@
                 "intensity": 0.6,
                 "specular_exp": 300,
                 "position": [
-                    -100.5,
-                    -10,
-                    5
+                    -1.5,
+                    -0,
+                    10
                 ],
                 "color": [
                     0.2,
@@ -91,7 +99,7 @@
                     "amount": [
                         0,
                         0,
-                        0
+                        4.259
                     ]
                 },
                 {

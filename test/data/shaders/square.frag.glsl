@@ -16,7 +16,16 @@ void main() {
     
     vec3 color = vec3(0.0);
     
-    color = compute_lighting_frag(color);
+    float f = (st.y - 1.5) * (sin(u_time * 0.0001));
+    color = vec3(f);
+    
+    if (u_on_fbo != 1) {
+        color = postp_gaussian_frag(color, st, 500.0, 8.0);
+    }
+    else {
+        vec3 tex = texture(u_tex, st).xyz;
+        color = compute_lighting_frag(color) + tex;
+    }
     
     outColor = vec4(color, 1.0);
 }

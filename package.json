@@ -13,7 +13,7 @@
   "devDependencies": {
     "glm-js": "^0.0.6-c",
     "wbase": "git+https://github.com/DanieleCapuano/wbase.git#master",
-    "wplug": "https://github.com/DanieleCapuano/wplug#master"
+    "wplug": "file:///media/daniele/Data/dev/GIT_REPOS/GIT_PUBLIC_REPOS/wplug/"
   },
   "dependencies": {
     "copy-webpack-plugin": "11.0.0",
