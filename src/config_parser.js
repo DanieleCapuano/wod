@@ -2,7 +2,7 @@ export const init_data = _init_data;
 
 import { plugins } from 'wplug';
 import { set_plugins_requires_into_config } from './plugins';
-import * as base_object_config from './base_config.json';
+import { default as base_object_config } from './base_config.json';
 
 function _init_data(data) {
     return new Promise((res, err) => {
