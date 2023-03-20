@@ -125,6 +125,7 @@ function glsl_includes_for_active_plugins(scene_desc, src, src_type, plugins) {
                             SPLIT_TOKEN = any_includes[0];
                         }
 
+
                         let sp_str = str.split(SPLIT_TOKEN);
                         ret_str = sp_str[0] + '\n' + NEEDED_INCLUDE_STR + '\n' + SPLIT_TOKEN + '\n' + sp_str[1];
                     }
