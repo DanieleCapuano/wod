@@ -26,7 +26,7 @@ function _init_data(data) {
                         oj.id = objects_keys[i];
 
                         oj.program_info_def = oj.program_info_def || {};
-                        Object.assign(oj.program_info_def.shaders_data || {}, base_object_config);
+                        Object.assign(oj.program_info_def.shaders_data || {}, JSON.parse(JSON.stringify(base_object_config)));
                     });
 
                     Promise.all(
