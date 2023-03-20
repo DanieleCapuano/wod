@@ -5,17 +5,17 @@
     "primitive": "TRIANGLES",
     "coords_dim": 3,
     "material": {
-        "ka": 0.8,
-        "kd": 0.8,
-        "ks": 0.9
+        "ka": 0.3,
+        "kd": 0.5,
+        "ks": 0.99
     },
     "program_info_def": {
         "shaders": {
             "vertex": {
-                "url": "/data/shaders/square.vert.glsl"
+                "url": "/data/shaders/quadfs.vert.glsl"
             },
             "fragment": {
-                "url": "/data/shaders/square.frag.glsl"
+                "url": "/data/shaders/quadfs.frag.glsl"
             }
         },
         "shaders_data": {
