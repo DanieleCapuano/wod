@@ -103,6 +103,9 @@ function glsl_replace_includes(src, plugins) {
     });
 }
 
+//this function inserts a string like '#include "plugin_type.plugin_id.shader_type"' in a shader source if it's needed
+//that's because needed plugins code can be requested either directly from scene config or implicitly from plugins requires
+//so the user is not directly aware of them but their code must be inserted as well
 function glsl_includes_for_active_plugins(scene_desc, src, src_type, plugins) {
     return Object.keys(scene_desc)
         .reduce((str, plugin_type) => {
@@ -124,7 +127,6 @@ function glsl_includes_for_active_plugins(scene_desc, src, src_type, plugins) {
                             //if there are other includes we'll put our new include before them
                             SPLIT_TOKEN = any_includes[0];
                         }
-
 
                         let sp_str = str.split(SPLIT_TOKEN);
                         ret_str = sp_str[0] + '\n' + NEEDED_INCLUDE_STR + '\n' + SPLIT_TOKEN + '\n' + sp_str[1];
