@@ -87,23 +87,21 @@ function _compute_objects_coords(scene_config) {
 //this is put in a separate function because it's computed at each animation frame
 function _compute_modelview(scene_config) {
     const { scene_desc, objects_to_draw } = scene_config;
-    const { model_rot_x, model_rot_y } = get_params();
     const C = scene_desc.camera;
     let C_pos = glm.vec3(1),
-        view_matrix = glm.mat4(1);
+        view_matrix = glm.mat4(1),
+        M_r = scene_config.get_modelview_transform ? scene_config.get_modelview_transform(scene_config) : glm.mat4(1);
 
-    let M_r = T.rotate_axis(glm.vec3(1, 0, 0), model_rot_x).mul(
-        T.rotate_axis(glm.vec3(0, 1, 0), model_rot_y)
-    );
-
+    //TODO: allow also the camera transforms to be updated from client
     C_pos = glm.vec4(C.position.concat(1.));
     let C_up = glm.vec4(C.up.concat(0.));
-
     view_matrix = T.lookAt(C_pos.xyz, glm.vec3(C.center), glm.vec3(C_up.x, C_up.y, C_up.z));
 
-    objects_to_draw.forEach((obj_def) => {
-        obj_def.model_matrix = M_r.mul(_compute_model_matrix(obj_def.id, scene_desc));
-    });
+    for (let i = 0; i < objects_to_draw.length; i++) {
+        let obj_def = objects_to_draw[i];
+        let M_r_obj = M_r.mul(obj_def.get_modelview_transform ? obj_def.get_modelview_transform(obj_def, scene_config) : glm.mat4(1));
+        obj_def.model_matrix = M_r_obj.mul(_compute_model_matrix(obj_def.id, scene_desc));
+    }
 
     return {
         view_matrix
@@ -111,17 +109,20 @@ function _compute_modelview(scene_config) {
 }
 
 function _compute_model_matrix(obj_id, scene_desc) {
-    let objs = scene_desc.objects;
-    return Object.keys(objs)
-        .filter((obj_key) => obj_key === obj_id)
-        .flatMap((obj_key) => objs[obj_key].transforms || [])
-        .reduce((M, transform_desc) => {
-            let transform_fn = T[transform_desc.type] || (() => glm.mat4(1));
-            let M_ret = M.mul(transform_fn(glm.vec3(transform_desc.amount)));
-
-            return M_ret;
-
-        }, glm.mat4(1))
+    let objs = scene_desc.objects,
+        objs_keys = Object.keys(objs),
+        M = glm.mat4(1);
+    for (let i = 0; i < objs_keys.length; i++) {
+        if (objs_keys[i] === obj_id) {
+            let tr = objs[objs_keys[i]];
+            for (let j = 0; j < tr.length; j++) {
+                let transform_desc = tr[j],
+                    transform_fn = T[transform_desc.type] || (() => glm.mat4(1));
+                M = M.mul(transform_fn(glm.vec3(transform_desc.amount)));
+            }
+        }
+    }
+    return M;
 }
 
 

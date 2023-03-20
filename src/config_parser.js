@@ -1,6 +1,8 @@
 export const init_data = _init_data;
+
 import { plugins } from 'wplug';
 import { set_plugins_requires_into_config } from './plugins';
+import * as base_object_config from './base_config.json';
 
 function _init_data(data) {
     return new Promise((res, err) => {
@@ -20,7 +22,12 @@ function _init_data(data) {
                 .map((obj_key) => _get_url(objects[obj_key]))
             )
                 .then((objects_jsons) => {
-                    objects_jsons.forEach((oj, i) => oj.id = objects_keys[i]);
+                    objects_jsons.forEach((oj, i) => {
+                        oj.id = objects_keys[i];
+
+                        oj.program_info_def = oj.program_info_def || {};
+                        Object.assign(oj.program_info_def.shaders_data || {}, base_object_config);
+                    });
 
                     Promise.all(
                         Object.keys(objects_jsons)

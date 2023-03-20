@@ -16,11 +16,8 @@
             0
         ]
     },
-    "postprocessing": {
-        "id": "fbo",
-        "framebuffers_n": 1,
-        "framebuffers_offset": 1,
-        "base_active_texture": 0
+    "geometry": {
+        "id": "quad"
     },
     "antialiasing": {
         "id": "postp_gaussian"
@@ -84,7 +81,10 @@
         ]
     },
     "objects": {
-        "square_1": {
+        "quad_1": {
+            "quad": {
+                "fullscreen": true
+            },
             "transforms": [
                 {
                     "type": "translate",
@@ -97,72 +97,16 @@
                 {
                     "type": "scale",
                     "amount": [
-                        2.5,
-                        2.5,
-                        2.5
+                        1,
+                        1,
+                        1
                     ]
                 },
                 {
                     "type": "rotate",
                     "amount": [
-                        25,
-                        113,
-                        0
-                    ]
-                }
-            ]
-        },
-        "square_2": {
-            "transforms": [
-                {
-                    "type": "translate",
-                    "amount": [
-                        4,
-                        0,
-                        0.5
-                    ]
-                },
-                {
-                    "type": "scale",
-                    "amount": [
-                        4.5,
-                        4.5,
-                        4.5
-                    ]
-                },
-                {
-                    "type": "rotate",
-                    "amount": [
-                        25,
-                        113,
-                        0
-                    ]
-                }
-            ]
-        },
-        "square_3": {
-            "transforms": [
-                {
-                    "type": "translate",
-                    "amount": [
                         0,
                         0,
-                        -1
-                    ]
-                },
-                {
-                    "type": "scale",
-                    "amount": [
-                        1.5,
-                        1.5,
-                        1.5
-                    ]
-                },
-                {
-                    "type": "rotate",
-                    "amount": [
-                        25,
-                        113,
                         0
                     ]
                 }

@@ -1,0 +1,27 @@
+{
+    "id": "quad_1",
+    "type": "quad",
+    "number_of_points": 6,
+    "primitive": "TRIANGLES",
+    "coords_dim": 3,
+    "material": {
+        "ka": 0.8,
+        "kd": 0.8,
+        "ks": 0.9
+    },
+    "program_info_def": {
+        "shaders": {
+            "vertex": {
+                "url": "/data/shaders/square.vert.glsl"
+            },
+            "fragment": {
+                "url": "/data/shaders/square.frag.glsl"
+            }
+        },
+        "shaders_data": {
+            "attributes": {},
+            "uniforms": {}
+        }
+    },
+    "coordinates_def": null
+}
