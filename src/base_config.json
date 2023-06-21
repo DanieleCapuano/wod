@@ -4,6 +4,7 @@
             "name": "a_position",
             "is_position": true,
             "opts": {
+                "size": 3,
                 "data_type": "FLOAT",
                 "normalized": false,
                 "stride": 24,
@@ -14,8 +15,9 @@
             "name": "a_normal",
             "is_normals": true,
             "opts": {
-                "data_type": "FLOAT",
-                "normalized": false,
+                "size": 4,
+                "data_type": "BYTE",
+                "normalized": true,
                 "stride": 24,
                 "offset": 12
             }

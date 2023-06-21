@@ -1,6 +1,3 @@
-const path = require('path');
-const CopyPlugin = require("copy-webpack-plugin");
-
 module.exports = [{
   mode: 'development',
   target: 'web',
@@ -15,10 +12,6 @@ module.exports = [{
   },
   module: {
     rules: [
-      {
-        test: /\.(scss|css)$/,
-        use: ['style-loader', 'css-loader', 'sass-loader'],
-      },
       {
         test: /\.glsl$/,
         loader: 'webpack-glsl-loader'
