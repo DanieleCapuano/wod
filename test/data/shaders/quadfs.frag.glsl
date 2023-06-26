@@ -20,7 +20,8 @@ void main() {
     color = vec3(f);
     
     if (u_on_fbo != 1) {
-        color = postp_gaussian_frag(color, st, 500.0, 8.0);
+        //from geometry.* (e.g. geometry.quad) we expect texcoord to be passed from vertex shader
+        color = postp_gaussian_frag(color, texcoord, 500.0, 8.0);
     }
     else {
         vec3 tex = texture(u_tex, st).xyz;

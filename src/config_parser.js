@@ -1,7 +1,7 @@
 export const init_data = _init_data;
 
 import { plugins } from 'wplug';
-import { set_plugins_requires_into_config } from './plugins';
+import { plugins_config_into_shaders_data, set_plugins_requires_into_config } from './plugins';
 import { default as base_object_config } from './base_config.json';
 
 function _init_data(data) {
@@ -16,6 +16,7 @@ function _init_data(data) {
                 scene_desc = json_files[1],
                 objects_keys = Object.keys(objects);
 
+            //this will read pugins' requires and and add them into the scene_desc config
             scene_desc = set_plugins_requires_into_config(scene_desc);
 
             Promise.all(objects_keys
@@ -26,67 +27,73 @@ function _init_data(data) {
                         oj.id = objects_keys[i];
 
                         oj.program_info_def = oj.program_info_def || {};
-                        Object.assign(oj.program_info_def.shaders_data || {}, JSON.parse(JSON.stringify(base_object_config)));
+                        oj.program_info_def.shaders_data = Object.assign(oj.program_info_def.shaders_data || {}, JSON.parse(JSON.stringify(base_object_config)));
+                        oj.program_info_def.shaders_data = plugins_config_into_shaders_data(oj.program_info_def.shaders_data);   //loads the plugins config in the "uniforms" and "attributes" fields of program_info structure being built
                     });
 
-                    Promise.all(
-                        Object.keys(objects_jsons)
-                            .map((obj_key) => {
-                                let program_shaders = objects_jsons[obj_key].program_info_def.shaders;
-                                return obj2map(
-                                    Object.assign({
-                                        vertex: _get_url(program_shaders.vertex.url, 'text'),
-                                        fragment: _get_url(program_shaders.fragment.url, 'text')
-                                    })
-                                );
-                            })
-                    ).then((shaders_code_arr_of_objs) => {
-                        let _n_objects = objects_jsons.length;
-                        const _loops_end = () => {
-                            res({
-                                scene_desc,
-                                objects_desc: objects_jsons
+                    _get_shaders_files(objects_jsons)
+                        .then((shaders_code_arr_of_objs) => {
+                            let _n_objects = objects_jsons.length;
+                            const _loops_end = () => {
+                                res({
+                                    scene_desc,
+                                    objects_desc: objects_jsons
+                                });
+                            };
+
+                            objects_jsons.forEach((o, i) => {
+                                const ///////////////////
+                                    _after_loop = (shaders_code) => {
+                                        const ////////////////////////////
+                                            { program_info_def } = o,
+                                            { shaders } = program_info_def;
+
+                                        shaders_code.vertex = glsl_includes_for_active_plugins(scene_desc, shaders_code.vertex, 'vert', plugins);
+                                        shaders.vertex.code = glsl_replace_includes(shaders_code.vertex, plugins);
+
+                                        shaders_code.fragment = glsl_includes_for_active_plugins(scene_desc, shaders_code.fragment, 'frag', plugins);
+                                        shaders.fragment.code = glsl_replace_includes(shaders_code.fragment, plugins);
+
+                                        if (--_n_objects === 0) _loops_end();
+                                    },
+                                    shaders_code_map = shaders_code_arr_of_objs[i],
+                                    shaders_code = {},
+                                    map_keys = shaders_code_map.keys(),
+                                    map_entries = shaders_code_map.entries();
+
+
+                                let map_n = shaders_code_map.size,
+                                    shader_key;
+                                while ((shader_key = map_keys.next()).done === false) {
+                                    const entry_then = ((shad_key, shader_src) => {
+                                        shaders_code[shad_key] = shader_src || "";
+                                        if (--map_n === 0) _after_loop(shaders_code);
+                                    }).bind(null, shader_key.value);
+
+                                    //this still contains a promise to be evaluated
+                                    map_entries.next().value[1].then(entry_then);
+                                }
                             });
-                        };
 
-                        objects_jsons.forEach((o, i) => {
-                            const ///////////////////
-                                _after_loop = (shaders_code) => {
-                                    const ////////////////////////////
-                                        { program_info_def } = o,
-                                        { shaders } = program_info_def;
-
-                                    shaders_code.vertex = glsl_includes_for_active_plugins(scene_desc, shaders_code.vertex, 'vert', plugins);
-                                    shaders.vertex.code = glsl_replace_includes(shaders_code.vertex, plugins);
-
-                                    shaders_code.fragment = glsl_includes_for_active_plugins(scene_desc, shaders_code.fragment, 'frag', plugins);
-                                    shaders.fragment.code = glsl_replace_includes(shaders_code.fragment, plugins);
-
-                                    if (--_n_objects === 0) _loops_end();
-                                },
-                                shaders_code_map = shaders_code_arr_of_objs[i],
-                                shaders_code = {},
-                                map_keys = shaders_code_map.keys(),
-                                map_entries = shaders_code_map.entries();
-
-
-                            let map_n = shaders_code_map.size,
-                                shader_key;
-                            while ((shader_key = map_keys.next()).done === false) {
-                                const entry_then = ((shad_key, shader_src) => {
-                                    shaders_code[shad_key] = shader_src || "";
-                                    if (--map_n === 0) _after_loop(shaders_code);
-                                }).bind(null, shader_key.value);
-
-                                //this still contains a promise to be evaluated
-                                map_entries.next().value[1].then(entry_then);
-                            }
                         });
-
-                    });
                 })
         });
     });
+}
+
+function _get_shaders_files(objects_jsons) {
+    return Promise.all(
+        Object.keys(objects_jsons)
+            .map((obj_key) => {
+                let program_shaders = objects_jsons[obj_key].program_info_def.shaders;
+                return obj2map(
+                    Object.assign({
+                        vertex: _get_url(program_shaders.vertex.url, 'text'),
+                        fragment: _get_url(program_shaders.fragment.url, 'text')
+                    })
+                );
+            })
+    )
 }
 
 //we'll use the same approach described here 

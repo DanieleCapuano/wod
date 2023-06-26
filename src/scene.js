@@ -4,7 +4,8 @@ import * as T from './transforms';
 import { auto_animation, listen_to_keys, get_params } from "./interactions";
 
 import { draw_objects, init_scene_webgl } from "./webgl_scene";
-import { get_plugins_model, plugins_clear_all, setup_active_plugins } from "./plugins";
+import { get_plugins_model, plugins_add_data_to_buffer, plugins_clear_all, setup_active_plugins } from "./plugins";
+import { debug_print_buffer } from "./debug";
 
 /*********************************************************************
  * this module is responsible for the scene initialization
@@ -31,8 +32,8 @@ function _init_scene(scene_config) {
     if (!canvas || !scene_config) return;
 
     let gl = scene_config.gl || canvas.getContext('webgl2', {
-        // desynchronized: true, //hints the user agent to reduce the latency by desynchronizing the canvas paint cycle from the event loop
-        // powerPreference: 'high-performance'
+        desynchronized: true, //hints the user agent to reduce the latency by desynchronizing the canvas paint cycle from the event loop
+        powerPreference: 'high-performance'
     });
     scene_config.gl = gl;
 
@@ -183,6 +184,8 @@ function _compute_coords_and_normals(obj_def) {
         has_normals = coords_dim === 3 && Object.keys(attributes).find(attr_key => attributes[attr_key].is_normals) !== undefined,
         stride = attributes.a_position.opts.stride;
 
+    //see https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer#examples
+    //for the general approach used here
     const buffer_to_fill = new ArrayBuffer(stride * coordinates_def.length),
         data_view = new DataView(buffer_to_fill),
         littleEndian = _isLittleEndian();
@@ -216,9 +219,20 @@ function _compute_coords_and_normals(obj_def) {
                 }
                 //fourth element just for data alignment
                 o.ab.setInt8(j, 0);
+                j += Int8Array.BYTES_PER_ELEMENT;
 
                 o.normal = n;
             }
+
+            //each plugin might want to add data to the buffer (e.g. texcoords or whatever)
+            plugins_add_data_to_buffer({
+                coordinate_index: i,
+                current_bytes_pos: j,
+                buffer: o.ab,
+                obj_def,
+                littleEndian
+            });
+            DEBUG.print_coords && debug_print_buffer(o.ab, stride, i, littleEndian);
 
             return o;
         }, {

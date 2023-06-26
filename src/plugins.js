@@ -7,39 +7,48 @@ export const get_active_plugins_as_array = _get_active_plugins_a;
 export const get_plugins_model = _get_plugins_model;
 export const plugins_config_into_shaders_data = _plugins_config_into_shaders_data;
 export const plugins_program_init = _plugins_program_init;
+export const plugins_add_data_to_buffer = _plugins_add_data_to_buffer;
 export const plugins_drawloop_callback = _plugins_drawloop_callback;
 export const plugins_clear_all = _plugins_clear_all;
 
-const _active_plugins = [];
+let _active_plugins = null;
 
 function _set_plugins_requires_into_config(scene_desc) {
     //1. first let's fill scene_desc with generated plugins' configurations got from "requires"
-    Object.keys(scene_desc).forEach(plugin_type => {
+    const _browse_plugins = (plugin_type) => {
         if (plugins[plugin_type]) {
-            //sd_key is a plugin
+            //the plugin_type key is a plugin's id
             scene_desc[plugin_type] = Array.isArray(scene_desc[plugin_type]) ? scene_desc[plugin_type] : [scene_desc[plugin_type]];
             scene_desc[plugin_type].forEach((plugin_with_type) => {
                 let plugin_id = plugin_with_type.id,
                     plugin = plugins[plugin_type][plugin_id],
                     reqs = plugin.requires;
+
+                plugin._active = true;
                 if (reqs) {
                     reqs = Array.isArray(reqs) ? reqs : [reqs];
                     reqs.forEach(req_plugin_desc => {
                         //each requires element will be in the form {"plugin_type": {"id": plugin_id, /*other options*/}}
                         Object
                             .keys(req_plugin_desc)
-                            .filter(p_key => scene_desc[p_key] === undefined)
-                            .forEach(p_key => Object.assign(scene_desc,
-                                {
-                                    [p_key]: req_plugin_desc[p_key]
-                                },
-                                scene_desc[p_key] || {} //if scene_desc already had defined the same plugin config, it wins
-                            ));
+                            .filter(p_key => scene_desc[p_key] === undefined)   //if scene_desc has already a configuration for this plugin we'll skip it
+                            .forEach(p_key => {
+                                Object.assign(scene_desc,
+                                    {
+                                        [p_key]: req_plugin_desc[p_key]
+                                    },
+                                    scene_desc[p_key] || {} //if scene_desc already had defined the same plugin config, it wins
+                                );
+
+                                //recursive step: we'll set also requires to "_active" this way
+                                _browse_plugins(p_key);
+                            });
                     });
                 }
             })
         }
-    });
+    };
+    Object.keys(scene_desc).forEach(_browse_plugins);
 
     return scene_desc;
 }
@@ -59,6 +68,7 @@ function _setup_active_plugins(config) {
                 let plugin_id = plugin_with_type.id,
                     plugin = plugins[plugin_type][plugin_id];
 
+                _active_plugins = _active_plugins || [];
                 _active_plugins.push(plugin);
                 return plugin.set_active(true, cc);  //set_active will return the config
             }, c);
@@ -84,7 +94,7 @@ function _get_active_plugins_a() {
     return _active_plugins || Object.keys(plugins)
         .flatMap(plug_type => {
             return Object.keys(plugins[plug_type])
-                .filter(plug_id => plugins[plug_type][plug_id].get_active())
+                .filter(plug_id => plugins[plug_type][plug_id].get_active() || plugins[plug_type][plug_id]._active)
                 .map(plug_id => plugins[plug_type][plug_id]);
         });
 }
@@ -101,7 +111,7 @@ function _plugins_config_into_shaders_data(shaders_data) {
     return _get_active_plugins_a()
         .reduce((shad_data, plugin) => {
             const { config } = plugin;
-            let c = config();
+            let c = config(shad_data);
 
             return Object.assign(shad_data, {
                 attributes: Object.assign({}, shad_data.attributes || {}, c.attributes || {}),
@@ -115,6 +125,14 @@ function _plugins_program_init(scene_config) {
         .reduce(
             (o, plugin) => plugin.program_init ? plugin.program_init(o) : o,
             scene_config
+        );
+}
+
+function _plugins_add_data_to_buffer(conf_o) {
+    return _get_active_plugins_a()
+        .reduce(
+            (o, plugin) => plugin.add_data_to_buffer ? plugin.add_data_to_buffer(o) : o,
+            conf_o
         );
 }
 

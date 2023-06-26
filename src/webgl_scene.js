@@ -33,10 +33,9 @@ function _init_scene_webgl(scene_config) {
             { vertex, fragment } = program_info_def.shaders,
             { shaders_data } = program_info_def;
 
-        //ugly procedural writing but let's keep it as clear as possible
+        //ugly procedural writing but let's keep this as clear as possible
         let program_info = {};
-        program_info = plugins_config_into_shaders_data(Object.assign({}, shaders_data));   //loads the plugins config in the "uniforms" and "attributes" fields of program_info structure being built
-        program_info = generate_attributes_from_config(gl, program_info, coords_dim);
+        program_info = generate_attributes_from_config(gl, shaders_data, coords_dim);
         program_info = _init_webgl_program(gl, program_info, vertex.code, fragment.code);
         program_info = fill_position_buffer(gl, program_info, coords);
 
