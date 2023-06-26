@@ -5,10 +5,14 @@ precision highp int;
 
 in vec3 a_position;
 
-uniform mat4 u_model;
-uniform mat4 u_view;
-uniform mat4 u_modelview;
-uniform mat4 u_projection;
+//Base-config Uniform Buffer Object
+uniform Base_UBO {
+    mat4 u_model;
+    mat4 u_view;
+    mat4 u_projection;
+    float u_time;
+    vec2 u_resolution;
+};
 
 #include "lighting.blinn_phong.vert"
 #include "antialiasing.fs_derivatives.vert"

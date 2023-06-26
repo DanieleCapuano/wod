@@ -26,30 +26,35 @@
     "uniforms": {
         "u_time": {
             "name": "u_time",
+            "ubo": "Base_UBO",
             "opts": {
                 "fn": "1f"
             }
         },
         "u_model": {
             "name": "u_model",
+            "ubo": "Base_UBO",
             "opts": {
                 "fn": "Matrix4fv"
             }
         },
         "u_view": {
             "name": "u_view",
+            "ubo": "Base_UBO",
             "opts": {
                 "fn": "Matrix4fv"
             }
         },
         "u_projection": {
             "name": "u_projection",
+            "ubo": "Base_UBO",
             "opts": {
                 "fn": "Matrix4fv"
             }
         },
         "u_resolution": {
             "name": "u_resolution",
+            "ubo": "Base_UBO",
             "opts": {
                 "fn": "2fv"
             }
