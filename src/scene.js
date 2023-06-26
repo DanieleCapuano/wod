@@ -4,7 +4,8 @@ import * as T from './transforms';
 import { auto_animation, listen_to_keys, get_params } from "./interactions";
 
 import { draw_objects, init_scene_webgl } from "./webgl_scene";
-import { get_plugins_model, plugins_clear_all, setup_active_plugins } from "./plugins";
+import { get_plugins_model, plugins_add_data_to_buffer, plugins_clear_all, setup_active_plugins } from "./plugins";
+import { debug_print_buffer } from "./debug";
 
 /*********************************************************************
  * this module is responsible for the scene initialization
@@ -31,8 +32,8 @@ function _init_scene(scene_config) {
     if (!canvas || !scene_config) return;
 
     let gl = scene_config.gl || canvas.getContext('webgl2', {
-        // desynchronized: true, //hints the user agent to reduce the latency by desynchronizing the canvas paint cycle from the event loop
-        // powerPreference: 'high-performance'
+        desynchronized: true, //hints the user agent to reduce the latency by desynchronizing the canvas paint cycle from the event loop
+        powerPreference: 'high-performance'
     });
     scene_config.gl = gl;
 
@@ -181,41 +182,79 @@ function _compute_coords_and_normals(obj_def) {
     //]
     const { attributes } = obj_def.program_info_def.shaders_data,
         has_normals = coords_dim === 3 && Object.keys(attributes).find(attr_key => attributes[attr_key].is_normals) !== undefined,
-        fa_len = coords_dim * (has_normals ? 2 : 1);
+        stride = attributes.a_position.opts.stride;
 
+    //see https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer#examples
+    //for the general approach used here
+    const buffer_to_fill = new ArrayBuffer(stride * coordinates_def.length),
+        data_view = new DataView(buffer_to_fill),
+        littleEndian = _isLittleEndian();
 
     let data = coordinates_def
         .reduce((o, coord_buf, i, coords_a) => {
             if (i > 0 && i % coords_dim === 0) {
+                //we keep a "normal" reference to compute the normal vector just once for each triangle
+                //if we're withing this if we're at the beginning of a new triangle, so let's clear the normal reference
                 o.normal = null;
             }
 
-            let icurr = i * (coords_dim * (has_normals ? 2 : 1)),
+            let icurr = i * stride,
                 n = has_normals ? (o.normal || _normal(coords_a.slice(i, i + coords_dim))) : null,
                 k = 0,
                 j = icurr;
 
-            for (j = icurr; j < icurr + coords_dim; j++) {
-                o.ab[j] = coord_buf[k];
+            //fill the buffer with **points coordinates**
+            for (j = icurr; j < icurr + coords_dim * Float32Array.BYTES_PER_ELEMENT; j += Float32Array.BYTES_PER_ELEMENT) {
+                o.ab.setFloat32(j, coord_buf[k], littleEndian);
                 k++;
             }
 
+            //fill the buffer with **normal vectors**
             if (n) {
-                o.ab[j] = n[0];
-                o.ab[j + 1] = n[1];
-                o.ab[j + 2] = n[2];
+                icurr = j;
+                k = 0;
+                for (j = icurr; j < icurr + 3 * Int8Array.BYTES_PER_ELEMENT; j += Int8Array.BYTES_PER_ELEMENT) {
+                    o.ab.setInt8(j, n[k] * 0x7f);
+                    k++;
+                }
+                //fourth element just for data alignment
+                o.ab.setInt8(j, 0);
+                j += Int8Array.BYTES_PER_ELEMENT;
 
                 o.normal = n;
             }
 
+            //each plugin might want to add data to the buffer (e.g. texcoords or whatever)
+            plugins_add_data_to_buffer({
+                coordinate_index: i,
+                current_bytes_pos: j,
+                buffer: o.ab,
+                obj_def,
+                littleEndian
+            });
+            DEBUG.print_coords && debug_print_buffer(o.ab, stride, i, littleEndian);
+
             return o;
         }, {
-            ab: new Float32Array(coordinates_def.length * fa_len),
+            ab: data_view,
             normal: null
         });
 
     return data.ab;
 }
+
+function _isLittleEndian() {
+    let uInt32 = new Uint32Array([0x11223344]);
+    let uInt8 = new Uint8Array(uInt32.buffer);
+
+    if (uInt8[0] === 0x44) {
+        return true;
+    } else if (uInt8[0] === 0x11) {
+        return false;
+    } else {
+        return false;
+    }
+};
 
 function _normal(triangle_vertices) {
     let a = glm.vec3(triangle_vertices[0]),

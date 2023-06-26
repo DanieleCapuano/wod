@@ -13,14 +13,10 @@
   "devDependencies": {
     "glm-js": "^0.0.6-c",
     "wbase": "git+https://github.com/DanieleCapuano/wbase.git#master",
-    "wplug": "file:///media/daniele/Data/dev/GIT_REPOS/GIT_PUBLIC_REPOS/wplug/"
+    "wplug": "https://github.com/DanieleCapuano/wplug#master"
   },
   "dependencies": {
     "copy-webpack-plugin": "11.0.0",
-    "css-loader": "^6.7.3",
-    "node-sass": "^7.0.1",
-    "sass-loader": "^13.2.0",
-    "style-loader": "^3.3.1",
     "webpack": "^5.75.0",
     "webpack-cli": "^4.10.0",
     "webpack-glsl-loader": "^1.0.1"

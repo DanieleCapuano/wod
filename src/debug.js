@@ -1,4 +1,5 @@
 export const print_debug = _print_debug;
+export const debug_print_buffer = _debug_print_buffer;
 
 ///////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////
@@ -60,4 +61,25 @@ function _print_debug(OI, canvas) {
         a = a.map(vec => viewport_mat.mul(vec));
         console.info("TRANSFORMED ARRS", f32a, a.map(vec => vec.elements).flat());
     });
+}
+
+
+function _debug_print_buffer(buffer, stride, i, littleEndian, has_texcoords) {
+    const pos = stride * i;
+    console.info("COORD", i, pos);
+    console.info(
+        buffer.getFloat32(pos + Float32Array.BYTES_PER_ELEMENT * 0, littleEndian),
+        buffer.getFloat32(pos + Float32Array.BYTES_PER_ELEMENT * 1, littleEndian),
+        buffer.getFloat32(pos + Float32Array.BYTES_PER_ELEMENT * 2, littleEndian),
+        buffer.getInt8(pos + Float32Array.BYTES_PER_ELEMENT * 3 + Int8Array.BYTES_PER_ELEMENT * 0),
+        buffer.getInt8(pos + Float32Array.BYTES_PER_ELEMENT * 3 + Int8Array.BYTES_PER_ELEMENT * 1),
+        buffer.getInt8(pos + Float32Array.BYTES_PER_ELEMENT * 3 + Int8Array.BYTES_PER_ELEMENT * 2),
+        buffer.getInt8(pos + Float32Array.BYTES_PER_ELEMENT * 3 + Int8Array.BYTES_PER_ELEMENT * 3)
+    );
+    if (has_texcoords) {
+        console.info(
+            buffer.getUint16(pos + Float32Array.BYTES_PER_ELEMENT * 3 + Int8Array.BYTES_PER_ELEMENT * 4 + Uint16Array.BYTES_PER_ELEMENT * 0, littleEndian),
+            buffer.getUint16(pos + Float32Array.BYTES_PER_ELEMENT * 3 + Int8Array.BYTES_PER_ELEMENT * 4 + Uint16Array.BYTES_PER_ELEMENT * 1, littleEndian),
+        );
+    }
 }
