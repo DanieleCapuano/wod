@@ -4,7 +4,7 @@ precision highp float;
 precision highp int;
 
 //Base-config Uniform Buffer Object
-layout (std140) uniform Base_UBO {
+layout(std140)uniform Base_UBO {
     mat4 u_model;
     mat4 u_view;
     mat4 u_projection;

@@ -1,5 +1,6 @@
 import glm from "glm-js";
 import * as T from './transforms';
+import { isSystemLittleEndian } from 'wbase';
 
 import { auto_animation, listen_to_keys, get_params } from "./interactions";
 
@@ -188,7 +189,7 @@ function _compute_coords_and_normals(obj_def) {
     //for the general approach used here
     const buffer_to_fill = new ArrayBuffer(stride * coordinates_def.length),
         data_view = new DataView(buffer_to_fill),
-        littleEndian = _isLittleEndian();
+        littleEndian = isSystemLittleEndian();
 
     let data = coordinates_def
         .reduce((o, coord_buf, i, coords_a) => {
@@ -242,19 +243,6 @@ function _compute_coords_and_normals(obj_def) {
 
     return data.ab;
 }
-
-function _isLittleEndian() {
-    let uInt32 = new Uint32Array([0x11223344]);
-    let uInt8 = new Uint8Array(uInt32.buffer);
-
-    if (uInt8[0] === 0x44) {
-        return true;
-    } else if (uInt8[0] === 0x11) {
-        return false;
-    } else {
-        return false;
-    }
-};
 
 function _normal(triangle_vertices) {
     let a = glm.vec3(triangle_vertices[0]),

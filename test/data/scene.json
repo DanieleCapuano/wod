@@ -19,6 +19,9 @@
     "geometry": {
         "id": "quad"
     },
+    "posprocessing": {
+        "id": "fbo"
+    },
     "antialiasing": [
         {
             "id": "postp_gaussian",
