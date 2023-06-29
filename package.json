@@ -12,7 +12,7 @@
   },
   "devDependencies": {
     "glm-js": "^0.0.6-c",
-    "wbase": "git+https://github.com/DanieleCapuano/wbase.git#master",
+    "wbase": "https://github.com/DanieleCapuano/wbase#master",
     "wplug": "https://github.com/DanieleCapuano/wplug#master"
   },
   "dependencies": {

@@ -2,7 +2,6 @@ export const init_data = _init_data;
 
 import { plugins } from 'wplug';
 import { plugins_config_into_shaders_data, set_plugins_requires_into_config } from './plugins';
-import { default as base_object_config } from './base_config.json';
 
 function _init_data(data) {
     return new Promise((res, err) => {
@@ -27,7 +26,6 @@ function _init_data(data) {
                         oj.id = objects_keys[i];
 
                         oj.program_info_def = oj.program_info_def || {};
-                        oj.program_info_def.shaders_data = Object.assign(oj.program_info_def.shaders_data || {}, JSON.parse(JSON.stringify(base_object_config)));
                         oj.program_info_def.shaders_data = plugins_config_into_shaders_data(oj.program_info_def.shaders_data);   //loads the plugins config in the "uniforms" and "attributes" fields of program_info structure being built
                     });
 
@@ -131,6 +129,7 @@ function glsl_includes_for_active_plugins(scene_desc, src, src_type, plugins) {
                     let plugin_id = plugin_with_type.id,
                         INCLUDE_SEP_TOKEN = '.?-?_?',
                         NEEDED_INCLUDE_REGEXP = '#include\\s+\\"' + plugin_type + INCLUDE_SEP_TOKEN + plugin_id + INCLUDE_SEP_TOKEN + src_type + '\\"',
+                        BASE_INCLUDE_REGEXP = '#include\\s+\\"base' + INCLUDE_SEP_TOKEN,
                         NEEDED_INCLUDE_STR = '#include "' + plugin_type + '.' + plugin_id + '.' + src_type + '"',
                         SPLIT_TOKEN = "void main() {";
 
@@ -139,7 +138,9 @@ function glsl_includes_for_active_plugins(scene_desc, src, src_type, plugins) {
                         let any_includes = str.match(INCLUDE_REGEXP);
                         if (any_includes) {
                             //if there are other includes we'll put our new include before them
-                            SPLIT_TOKEN = any_includes[0];
+                            //BUT we'll have some care to put "base*" plugins includes before all the others (because they declare base variables and things)
+                            SPLIT_TOKEN = any_includes
+                                .filter(inc => inc.match(new RegExp(BASE_INCLUDE_REGEXP)) === null)[0];
                         }
 
                         let sp_str = str.split(SPLIT_TOKEN);

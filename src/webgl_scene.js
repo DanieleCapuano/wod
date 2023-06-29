@@ -27,15 +27,15 @@ export const draw_objects = _draw_objects;
 */
 function _init_scene_webgl(scene_config) {
     const { gl, objects_to_draw, } = scene_config;
-    objects_to_draw.forEach((obj_config) => {
+    objects_to_draw.forEach((obj_config, program_index) => {
         const //////////
             { program_info_def, coords_dim, coords, indices } = obj_config,
             { vertex, fragment } = program_info_def.shaders,
             { shaders_data } = program_info_def;
 
         //ugly procedural writing but let's keep this as clear as possible
-        let program_info = {};
-        program_info = generate_attributes_from_config(gl, shaders_data, coords_dim);
+        let program_info = { program_index, programs_number: objects_to_draw.length };
+        program_info = generate_attributes_from_config(gl, program_info, shaders_data, coords_dim);
         program_info = _init_webgl_program(gl, program_info, vertex.code, fragment.code);
         program_info = fill_position_buffer(gl, program_info, coords);
 

@@ -16,6 +16,9 @@
             0
         ]
     },
+    "base": {
+        "id": "model"
+    },
     "geometry": {
         "id": "quad"
     },
