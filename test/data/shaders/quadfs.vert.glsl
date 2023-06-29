@@ -6,7 +6,7 @@ precision highp int;
 in vec3 a_position;
 
 //Base-config Uniform Buffer Object
-uniform Base_UBO {
+layout (std140) uniform Base_UBO {
     mat4 u_model;
     mat4 u_view;
     mat4 u_projection;

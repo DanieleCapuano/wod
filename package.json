@@ -12,8 +12,8 @@
   },
   "devDependencies": {
     "glm-js": "^0.0.6-c",
-    "wbase": "file:///media/daniele/Data/dev/GIT_REPOS/GIT_PUBLIC_REPOS/wbase/",
-    "wplug": "file:///media/daniele/Data/dev/GIT_REPOS/GIT_PUBLIC_REPOS/wplug/"
+    "wbase": "file:///C:/dev/prv/wb/",
+    "wplug": "file:///C:/dev/prv/wp/"
   },
   "dependencies": {
     "copy-webpack-plugin": "11.0.0",
