@@ -169,7 +169,7 @@ function _stop(scene_config) {
 
 //MAYBE the following two functions could be put in a separate plugin (?)
 function _compute_coords_and_normals(obj_def) {
-    const { coords_dim, coordinates_def } = obj_def;
+    const { coords_dim, coordinates_def, indices } = obj_def;
 
     //IF we're using 3D and there's some attribute defined to contain "normals" (is_normals: true) then:
     //
@@ -200,7 +200,7 @@ function _compute_coords_and_normals(obj_def) {
             }
 
             let icurr = i * stride,
-                n = has_normals ? (o.normal || _normal(coords_a.slice(i, i + coords_dim))) : null,
+                n = has_normals ? (o.normal || _normal(coords_a, indices, i, coords_dim)) : null,
                 k = 0,
                 j = icurr;
 
@@ -244,7 +244,17 @@ function _compute_coords_and_normals(obj_def) {
     return data.ab;
 }
 
-function _normal(triangle_vertices) {
+function _normal(vertices, indices, i, coords_dim) {
+    let triangle_vertices = [];
+    if (indices) {
+        for (let j = 0; j < coords_dim; j++) {
+            triangle_vertices[j] = vertices[indices[i + j]];
+        }
+    }
+    else {
+        triangle_vertices = vertices.slice(i, i + coords_dim);
+    }
+
     let a = glm.vec3(triangle_vertices[0]),
         b = glm.vec3(triangle_vertices[1]),
         c = glm.vec3(triangle_vertices[2]);
