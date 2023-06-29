@@ -12,8 +12,8 @@
   },
   "devDependencies": {
     "glm-js": "^0.0.6-c",
-    "wbase": "file:///C:/dev/prv/wb/",
-    "wplug": "file:///C:/dev/prv/wp/"
+    "wbase": "https://github.com/DanieleCapuano/wbase#master",
+    "wplug": "https://github.com/DanieleCapuano/wplug#master"
   },
   "dependencies": {
     "copy-webpack-plugin": "11.0.0",

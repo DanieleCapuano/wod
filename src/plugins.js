@@ -35,7 +35,11 @@ function _set_plugins_requires_into_config(scene_desc) {
                             .forEach(p_key => {
                                 Object.assign(scene_desc,
                                     {
-                                        [p_key]: req_plugin_desc[p_key]
+                                        [p_key]: Object.assign(
+                                            {},
+                                            req_plugin_desc[p_key],
+                                            { is_require: true }
+                                        )
                                     },
                                     scene_desc[p_key] || {} //if scene_desc already had defined the same plugin config, it wins
                                 );
@@ -96,7 +100,8 @@ function _get_active_plugins_a() {
             return Object.keys(plugins[plug_type])
                 .filter(plug_id => plugins[plug_type][plug_id].get_active() || plugins[plug_type][plug_id]._active)
                 .map(plug_id => plugins[plug_type][plug_id]);
-        });
+        })
+        .sort((a, b) => (a.is_require || a.is_base) ? -1 : 1);
 }
 
 function _get_plugins_model(desc) {

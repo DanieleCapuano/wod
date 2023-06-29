@@ -3,17 +3,9 @@
 precision highp float;
 precision highp int;
 
-//Base-config Uniform Buffer Object
-layout(std140)uniform Base_UBO {
-    mat4 u_model;
-    mat4 u_view;
-    mat4 u_projection;
-    float u_time;
-    vec2 u_resolution;
-};
-
 out vec4 outColor;
 
+#include "base.model.frag"
 #include "lighting.blinn_phong.frag"
 #include "antialiasing.fs_derivatives.frag"
 #include "antialiasing.postp_gaussian.frag"
