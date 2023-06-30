@@ -166,8 +166,6 @@ function _stop(scene_config) {
 }
 
 
-
-//MAYBE the following two functions could be put in a separate plugin (?)
 function _compute_coords_and_normals(obj_def) {
     const { coords_dim, coordinates_def, indices } = obj_def;
 
@@ -186,54 +184,64 @@ function _compute_coords_and_normals(obj_def) {
         stride = attributes.a_position.opts.stride;
 
     //see https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/vertexAttribPointer#examples
-    //for the general approach used here
+    //for the general approach used here about interleaving attributes and keeping the data types as minimal as possible
+    //NOTE: indices management is not taken from that reference
     const buffer_to_fill = new ArrayBuffer(stride * coordinates_def.length),
         data_view = new DataView(buffer_to_fill),
-        littleEndian = isSystemLittleEndian();
+        littleEndian = isSystemLittleEndian(),
+        indices_to_process = indices || Array.from((new Array(coordinates_def.length)).keys()), //if no indices are provided we'll use a fake indices array with the indices in the coordinates_def array
+        processed_vertices = [];
 
-    let data = coordinates_def
-        .reduce((o, coord_buf, i, coords_a) => {
+    let data = indices_to_process
+        .reduce((o, vertex_index_to_process, i, indices_a) => {
             if (i > 0 && i % coords_dim === 0) {
                 //we keep a "normal" reference to compute the normal vector just once for each triangle
-                //if we're withing this if we're at the beginning of a new triangle, so let's clear the normal reference
+                //if we're within this block then we're at the beginning of a new triangle,
+                //so let's clear the reference to "normal"
                 o.normal = null;
             }
+            const n = has_normals ? (o.normal || _normal(coordinates_def, indices_a, i, coords_dim)) : null;
+            o.normal = n;
 
-            let icurr = i * stride,
-                n = has_normals ? (o.normal || _normal(coords_a, indices, i, coords_dim)) : null,
-                k = 0,
-                j = icurr;
+            //we'll add just a single data block to the vbo for each vertex
+            //(even though it could occur several times in the indices array of course!)
+            if (processed_vertices.indexOf(vertex_index_to_process) === -1) {
+                const coord_buf = coordinates_def[vertex_index_to_process];
+                processed_vertices.push(vertex_index_to_process);
 
-            //fill the buffer with **points coordinates**
-            for (j = icurr; j < icurr + coords_dim * Float32Array.BYTES_PER_ELEMENT; j += Float32Array.BYTES_PER_ELEMENT) {
-                o.ab.setFloat32(j, coord_buf[k], littleEndian);
-                k++;
-            }
+                let icurr = vertex_index_to_process * stride,
+                    k = 0,
+                    j = icurr;
 
-            //fill the buffer with **normal vectors**
-            if (n) {
-                icurr = j;
-                k = 0;
-                for (j = icurr; j < icurr + 3 * Int8Array.BYTES_PER_ELEMENT; j += Int8Array.BYTES_PER_ELEMENT) {
-                    o.ab.setInt8(j, n[k] * 0x7f);
+                //1. fill the buffer with **vertex coordinates**
+                for (j = icurr; j < icurr + coords_dim * Float32Array.BYTES_PER_ELEMENT; j += Float32Array.BYTES_PER_ELEMENT) {
+                    o.ab.setFloat32(j, coord_buf[k], littleEndian);
                     k++;
                 }
-                //fourth element just for data alignment
-                o.ab.setInt8(j, 0);
-                j += Int8Array.BYTES_PER_ELEMENT;
 
-                o.normal = n;
+                //2. fill the buffer with **normal vectors**
+                if (n) {
+                    icurr = j;
+                    k = 0;
+                    for (j = icurr; j < icurr + 3 * Int8Array.BYTES_PER_ELEMENT; j += Int8Array.BYTES_PER_ELEMENT) {
+                        o.ab.setInt8(j, n[k] * 0x7f);
+                        k++;
+                    }
+                    //fourth element just for data alignment (32 bit block for each normal)
+                    o.ab.setInt8(j, 0);
+                    j += Int8Array.BYTES_PER_ELEMENT;
+                }
+
+                //3. let each plugin to add data to the buffer (e.g. **texcoords** or whatever)
+                plugins_add_data_to_buffer({
+                    coordinate_index: vertex_index_to_process,
+                    current_bytes_pos: j,
+                    buffer: o.ab,
+                    obj_def,
+                    littleEndian
+                });
+                DEBUG.print_coords && debug_print_buffer(o.ab, stride, i, littleEndian);
             }
-
-            //each plugin might want to add data to the buffer (e.g. texcoords or whatever)
-            plugins_add_data_to_buffer({
-                coordinate_index: i,
-                current_bytes_pos: j,
-                buffer: o.ab,
-                obj_def,
-                littleEndian
-            });
-            DEBUG.print_coords && debug_print_buffer(o.ab, stride, i, littleEndian);
 
             return o;
         }, {
