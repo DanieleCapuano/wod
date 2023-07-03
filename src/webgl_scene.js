@@ -66,7 +66,7 @@ function _init_webgl_program(gl, program_info, vert, frag) {
 
 
 function _draw_objects(scene_config, time) {
-    const { gl } = scene_config;
+    const { gl, start_time } = scene_config;
     const { view_matrix, projection_matrix, resolution } = scene_config;
 
     gl.clearColor(0, 0, 0, 1);
@@ -88,7 +88,7 @@ function _draw_objects(scene_config, time) {
         scene_config = plugins_drawloop_callback(obj_config, scene_config);
 
         set_uniforms(gl, {
-            u_time: time || 0,
+            u_time: (start_time || 0) + (time || 0),
             u_model: obj_config.model_matrix.elements,
             u_view: view_matrix.elements,
             u_projection: projection_matrix.elements,
