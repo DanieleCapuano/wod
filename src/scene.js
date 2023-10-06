@@ -116,11 +116,18 @@ function _compute_model_matrix(obj_id, scene_desc) {
         M = glm.mat4(1);
     for (let i = 0; i < objs_keys.length; i++) {
         if (objs_keys[i] === obj_id) {
-            let tr = objs[objs_keys[i]].transforms;
-            for (let j = 0; j < tr.length; j++) {
-                let transform_desc = tr[j],
-                    transform_fn = T[transform_desc.type] || (() => glm.mat4(1));
-                M = M.mul(transform_fn(glm.vec3(transform_desc.amount)));
+            let o = objs[objs_keys[i]],
+                tr = o.transforms;
+
+            if (o.matrixTransform) {
+                M = glm.mat4(o.matrixTransform);
+            }
+            else {
+                for (let j = 0; j < tr.length; j++) {
+                    let transform_desc = tr[j],
+                        transform_fn = T[transform_desc.type] || (() => glm.mat4(1));
+                    M = M.mul(transform_fn(glm.vec3(transform_desc.amount)));
+                }
             }
         }
     }
