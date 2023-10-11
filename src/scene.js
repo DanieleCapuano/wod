@@ -6,14 +6,14 @@ import { auto_animation, listen_to_keys, get_params } from "./interactions";
 
 import { draw_objects, init_scene_webgl } from "./webgl_scene";
 import { get_plugins_model, plugins_add_data_to_buffer, plugins_clear_all, setup_active_plugins } from "./plugins";
-import { debug_print_buffer } from "./debug";
+import { debug_print_buffer, debug_print_transforms } from "./debug";
 
 /*********************************************************************
  * this module is responsible for the scene initialization
  * for what concerns the objects and scene structures and math operations
  * it creates vectors and matrices to be passed to the webgl_scene
  */
-const DEBUG = {
+let DEBUG = {
     print_coords: false,
     print: false,
     interactions: false,
@@ -47,8 +47,10 @@ function _init_scene(scene_config) {
     //computes coordinates, normals and whatever
     scene_config = _init_scene_struct(scene_config);
 
+    DEBUG = scene_config.DEBUG || DEBUG;
     DEBUG.interactions && listen_to_keys();
     DEBUG.animation && auto_animation();
+    DEBUG.print_coords && debug_print_transforms(scene_config);
 
     return init_scene_webgl(scene_config);  //this will return the scene_config with enriched data for each object in objects_to_draw
 }
@@ -247,7 +249,7 @@ function _compute_coords_and_normals(obj_def) {
                     obj_def,
                     littleEndian
                 });
-                DEBUG.print_coords && debug_print_buffer(o.ab, stride, i, littleEndian);
+                // DEBUG.print_coords && debug_print_buffer(o.ab, stride, i, littleEndian);
             }
 
             return o;

@@ -1,5 +1,6 @@
 export const print_debug = _print_debug;
 export const debug_print_buffer = _debug_print_buffer;
+export const debug_print_transforms = _debug_print_transforms;
 
 ///////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////
@@ -60,6 +61,29 @@ function _print_debug(OI, canvas) {
             );
         a = a.map(vec => viewport_mat.mul(vec));
         console.info("TRANSFORMED ARRS", f32a, a.map(vec => vec.elements).flat());
+    });
+}
+
+function _debug_print_transforms(scene_config) {
+    let P = scene_config.projection_matrix;
+    let V = scene_config.view_matrix;
+    let o = scene_config.objects_to_draw[0];
+    let canvas = scene_config.canvas;
+    o.coordinates_def.forEach((c, pi) => {
+        let p = glm.vec4(c.concat(1));
+        console.info("Vp P" + pi, V.mul(p).elements);
+
+        let PVM = P.mul(V).mul(o.model_matrix);
+        let PVMp = PVM.mul(p).elements;
+        console.info("PVMp P" + pi, PVMp);
+
+        let cc = PVMp;
+        let pv = [cc[0] / cc[3], cc[1] / cc[3], cc[2] / cc[3]];
+        let dims = [canvas.width, canvas.height, 1];
+        let sc = pv.map((p, i) => {
+            return ((p * .5) + .5) * dims[i];
+        });
+        console.info("SCREEN P" + pi, sc);
     });
 }
 
