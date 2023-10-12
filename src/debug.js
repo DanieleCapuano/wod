@@ -71,6 +71,7 @@ function _debug_print_transforms(scene_config) {
     let canvas = scene_config.canvas;
     o.coordinates_def.forEach((c, pi) => {
         let p = glm.vec4(c.concat(1));
+        console.info("P" + pi, p.elements);
         console.info("Vp P" + pi, V.mul(p).elements);
 
         let PVM = P.mul(V).mul(o.model_matrix);
