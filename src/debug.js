@@ -65,27 +65,85 @@ function _print_debug(OI, canvas) {
 }
 
 function _debug_print_transforms(scene_config) {
-    let P = scene_config.projection_matrix;
-    let V = scene_config.view_matrix;
     let o = scene_config.objects_to_draw[0];
+
+    let P = scene_config.M_persp;
+    let O = scene_config.M_ortho;
+    let V = scene_config.view_matrix;
+    let M = o.model_matrix;
     let canvas = scene_config.canvas;
-    o.coordinates_def.forEach((c, pi) => {
-        let p = glm.vec4(c.concat(1));
-        console.info("P" + pi, p.elements);
-        console.info("Vp P" + pi, V.mul(p).elements);
+    let dims = [canvas.width, canvas.height, 1];
+    let screenPoints = o.coordinates_def.map((c, pi) => {
+        let p = glm.vec4(c.concat(c.length === 3 ? [1] : []));
+        console.info("p" + pi, p.elements);
+        console.info("M*p" + pi, o.model_matrix.mul(p).elements);
 
-        let PVM = P.mul(V).mul(o.model_matrix);
-        let PVMp = PVM.mul(p).elements;
-        console.info("PVMp P" + pi, PVMp);
+        let VM = V.mul(M);
+        console.info("VM*p" + pi, VM.mul(p).elements);
 
-        let cc = PVMp;
+        let PVM = P.mul(VM);
+        console.info("PVM*p" + pi, PVM.mul(p).elements);
+
+        let OPVM = O.mul(PVM);
+        let OPVMp = OPVM.mul(p);
+        console.info("OPVM*p" + pi, OPVMp.elements);
+
+        let cc = OPVMp;
         let pv = [cc[0] / cc[3], cc[1] / cc[3], cc[2] / cc[3]];
-        let dims = [canvas.width, canvas.height, 1];
         let sc = pv.map((p, i) => {
             return ((p * .5) + .5) * dims[i];
         });
-        console.info("SCREEN P" + pi, sc);
+        return sc;
     });
+
+    console.info("SCREEN POINTS", screenPoints);
+
+    let
+        DIMS = dims,
+        targetPoints = [
+            [
+                596,
+                888
+            ],
+            [
+                999,
+                799
+            ],
+            [
+                1236,
+                577
+            ],
+            [
+                596,
+                577
+            ]
+        ],
+        pointsW = 0.9000000357627869,
+        SPoints = targetPoints.map(sp => sp.concat(0.8897876385932113)),
+        REVTransform = (parr) => {
+            return parr.map((screenPoint, spi) => {
+                let sp = screenPoint.map((pcoord, i) => {
+                    return ((pcoord / DIMS[i]) - 0.5) * 2 * pointsW;
+                });
+                let spv = glm.vec4(sp.concat(pointsW));
+                let O_inv = glm.inverse(O);
+                let spv_O = O_inv.mul(spv);
+                let P_inv = glm.inverse(P);
+                let spv_OP = P_inv.mul(spv_O);
+                let V_inv = glm.inverse(V);
+                let spv_OPV = V_inv.mul(spv_OP);
+                let M_inv = glm.inverse(M);
+                let spv_OPVM = M_inv.mul(spv_OPV);
+                return spv_OPVM;
+            });
+        };
+
+    let rev = REVTransform(SPoints).map(revv => {
+        let els = revv.elements;
+        return [els[0], els[1], els[2]]
+    });
+    console.info("REVERSED", rev);
+    console.info(JSON.stringify(rev));
 }
 
 
