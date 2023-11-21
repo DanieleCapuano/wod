@@ -152,7 +152,10 @@ function _plugins_drawloop_callback(obj_config, scene_config) {
 function _plugins_clear_all(scene_config) {
     return _get_active_plugins_a()
         .reduce(
-            (o, plugin) => plugin.cleanup ? plugin.cleanup(o) : o,
+            (o, plugin) => {
+                plugin._active = false;
+                return plugin.cleanup ? plugin.cleanup(o) : o
+            },
             scene_config
         );
 }
