@@ -150,13 +150,12 @@ let rafId = null;
 function _do_run(scene_config, time) {
     const { canvas, gl } = scene_config;
 
-    draw_objects(Object.assign(
-        scene_config,
-        _compute_modelview(scene_config),
-        { resolution: [canvas.width, canvas.height] }
-    ), time || 0);
-
     if (program_running && !gl.isContextLost()) {
+        draw_objects(Object.assign(
+            scene_config,
+            _compute_modelview(scene_config),
+            { resolution: [canvas.width, canvas.height] }
+        ), time || 0);
         rafId = requestAnimationFrame(_do_run.bind(null, scene_config));
     }
     else {
