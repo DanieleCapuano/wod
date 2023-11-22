@@ -154,7 +154,7 @@ function _plugins_clear_all(scene_config) {
         .reduce(
             (o, plugin) => {
                 plugin._active = false;
-                plugin.set_active && plugin.set_active(false);
+                plugin.set_active && plugin.set_active(false, scene_config);
                 return plugin.cleanup ? plugin.cleanup(o) : o
             },
             scene_config
