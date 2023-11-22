@@ -150,7 +150,7 @@ function _plugins_drawloop_callback(obj_config, scene_config) {
 }
 
 function _plugins_clear_all(scene_config) {
-    return _get_active_plugins_a()
+    _get_active_plugins_a()
         .reduce(
             (o, plugin) => {
                 plugin._active = false;
@@ -159,4 +159,6 @@ function _plugins_clear_all(scene_config) {
             },
             scene_config
         );
+    _active_plugins = null;
+    return scene_config;
 }
