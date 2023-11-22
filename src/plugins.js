@@ -60,7 +60,7 @@ function _set_plugins_requires_into_config(scene_desc) {
 //currently plugins must be declared in the scene config, at "scene level" only:
 //since each scene has a config object for each object in the scene as well,
 //objects could contain options data for specific plugins
-//while the plugin "dependency" can be declared as scene level in the config file
+//while the plugin's "dependencies" can be declared as scene level in the config file
 function _setup_active_plugins(config) {
     const { scene_desc } = config;
 
@@ -86,7 +86,7 @@ function _get_active_plugins_o() {
         .reduce((active_plugins, plugin_type) => {
             return Object.assign(active_plugins, {
                 [plugin_type]: Object.keys(plugins[plugin_type])
-                    .filter(plugin_id => plugins[plugin_type][plugin_id].get_active())
+                    .filter(plugin_id => plugins[plugin_type][plugin_id].get_active() || plugins[plugin_type][plugin_id]._active)
                     .reduce((plugs_o, plugin_id) => Object.assign(plugs_o, {
                         [plugin_id]: plugins[plugin_type][plugin_id]
                     }), {})
@@ -150,9 +150,15 @@ function _plugins_drawloop_callback(obj_config, scene_config) {
 }
 
 function _plugins_clear_all(scene_config) {
-    return _get_active_plugins_a()
+    _get_active_plugins_a()
         .reduce(
-            (o, plugin) => plugin.cleanup ? plugin.cleanup(o) : o,
+            (o, plugin) => {
+                plugin._active = false;
+                plugin.set_active && plugin.set_active(false, o);
+                return plugin.cleanup ? plugin.cleanup(o) : o
+            },
             scene_config
         );
+    _active_plugins = null;
+    return scene_config;
 }
