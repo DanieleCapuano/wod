@@ -56,24 +56,28 @@ function _init_scene(scene_config) {
 }
 
 function _init_scene_struct(scene_config) {
-    const { canvas } = scene_config;
+    const { canvas, objects_desc } = scene_config,
+        { OP, M_ortho, M_persp } = T.perspective(90, canvas.width / canvas.height, .1, 99);
     return [
-        _compute_objects_coords,
         _compute_modelview,
+        _compute_objects_coords,
         get_plugins_model
     ].reduce(
         (d, fn) => Object.assign(d, fn(d)),
         Object.assign(scene_config, {
-            projection_matrix: T.perspective(90, canvas.width / canvas.height, .1, 99),
+            objects_to_draw: objects_desc.slice(0), //this copy will be enriched with computed stuff
+            M_ortho, M_persp,
+            projection_matrix: OP,
             resolution: [canvas.width, canvas.height]
         })
     );
 }
 
 function _compute_objects_coords(scene_config) {
-    const { scene_desc, objects_desc } = scene_config;
+    // const { scene_desc, objects_desc } = scene_config;
+    const { objects_to_draw } = scene_config;
     return {
-        objects_to_draw: objects_desc.map((obj_def) => {
+        objects_to_draw: objects_to_draw.map((obj_def) => {
             return Object.assign(obj_def, {
                 ////////////////////
                 //Coordinates and normals put in a single Float32Array
@@ -81,7 +85,7 @@ function _compute_objects_coords(scene_config) {
 
                 ////////////////////
                 //model transform computed multiplying up all the transformations in the object description file
-                model_matrix: _compute_model_matrix(obj_def.id, scene_desc)
+                // model_matrix: _compute_model_matrix(obj_def.id, scene_desc)
             })
         })
     };
@@ -90,7 +94,13 @@ function _compute_objects_coords(scene_config) {
 
 //this is put in a separate function because it's computed at each animation frame
 function _compute_modelview(scene_config) {
-    const { scene_desc, objects_to_draw } = scene_config;
+    const {
+        scene_desc,
+        objects_to_draw,
+        M_ortho,
+        M_persp,
+        canvas
+    } = scene_config;
     const C = scene_desc.camera;
     let C_pos = glm.vec3(1),
         view_matrix = glm.mat4(1),
@@ -105,6 +115,18 @@ function _compute_modelview(scene_config) {
         let obj_def = objects_to_draw[i];
         let M_r_obj = M_r.mul(obj_def.get_modelview_transform ? obj_def.get_modelview_transform(obj_def, scene_config) : glm.mat4(1));
         obj_def.model_matrix = M_r_obj.mul(_compute_model_matrix(obj_def.id, scene_desc));
+
+        if (!obj_def.coordinates_def && obj_def.screen_coordinates) {
+            obj_def.coordinates_def = T.get_model_coords_from_screen_coords(
+                {
+                    M_ortho, M_persp,
+                    M_view: view_matrix
+                },
+                obj_def.screen_coordinates,
+                obj_def,
+                canvas
+            );
+        }
     }
 
     return {

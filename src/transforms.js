@@ -7,6 +7,7 @@ export const scale = _scale;
 export const create_reference_frame = _create_reference_frame;
 export const lookAt = _lookAt;
 export const perspective = _perspective;
+export const get_model_coords_from_screen_coords = _get_model_coords_from_screen_coords;
 
 //////////////////////////////////////////////////////////
 //Functions implementation
@@ -71,7 +72,7 @@ function _rotate_axis(/*vec3*/axis, degrees, /*vec3*/invec_point) {
             ROT_Z_M.mul(REF_M)
         );
 
-        return P ? (M.mul(glm.vec4(P, 1))).xyz : M;
+    return P ? (M.mul(glm.vec4(P, 1))).xyz : M;
 }
 
 function _rotate(amount_vec3, invec) {
@@ -85,22 +86,22 @@ function _rotate(amount_vec3, invec) {
 
     const
         r_x = tx === 0 ? glm.mat4(1) : glm.mat4(
-            1, 0,        0,       0,
-            0, cos(tx),  sin(tx), 0,
+            1, 0, 0, 0,
+            0, cos(tx), sin(tx), 0,
             0, -sin(tx), cos(tx), 0,
-            0, 0,        0,       1
+            0, 0, 0, 1
         ),
         r_y = ty === 0 ? glm.mat4(1) : glm.mat4(
             cos(ty), 0, -sin(ty), 0,
-            0,       1, 0,        0,
-            sin(ty), 0, cos(ty),  0,
-            0,       0, 0,        1
+            0, 1, 0, 0,
+            sin(ty), 0, cos(ty), 0,
+            0, 0, 0, 1
         ),
         r_z = tz === 0 ? glm.mat4(1) : glm.mat4(
-            cos(tz),  sin(tz), 0, 0,
+            cos(tz), sin(tz), 0, 0,
             -sin(tz), cos(tz), 0, 0,
-            0,        0,       1, 0,
-            0,        0,       0, 1
+            0, 0, 1, 0,
+            0, 0, 0, 1
         );
     let M = r_x.mul(r_y).mul(r_z);
 
@@ -171,17 +172,17 @@ function _perspective(fov_y, aspect_ratio, near, far) {
     let ///////////////////////
         //M_ortho maps [[l, r], [b, t], [-n, -f]] ==> [-1, 1]^3
         M_ortho = glm.mat4(
-            2 / (r - l),                        0,                       0,                     0,
-            0,                                2 / (t - b),               0,                     0,
-            0,                                  0,                     2 / (n - f),             0,
-            (-(r + l)) / (r - l),    (-(t + b)) / (t - b),       (n + f) / (n - f),             1
+            2 / (r - l), 0, 0, 0,
+            0, 2 / (t - b), 0, 0,
+            0, 0, 2 / (n - f), 0,
+            (-(r + l)) / (r - l), (-(t + b)) / (t - b), (n + f) / (n - f), 1
         ),
         //M_persp implements perspective projection. Note that it maps [-n, -f] to [-n, -f] after a perspective divide of -z (MINUS ZETA!!!)
         M_persp = glm.mat4(
-            n,                                   0,                      0,                     0,
-            0,                                   n,                      0,                     0,
-            0,                                   0,                    n + f,                  -1,
-            0,                                   0,                    n * f,                   0
+            n, 0, 0, 0,
+            0, n, 0, 0,
+            0, 0, n + f, -1,
+            0, 0, n * f, 0
         );
 
     //SAME AS DOING 
@@ -191,5 +192,38 @@ function _perspective(fov_y, aspect_ratio, near, far) {
     //     (l + r) / (r - l), (b + t) / (t - b), (f + n) / (n - f), -1,
     //     0, 0, (2 * f * n) / (n - f), 0
     // );
-    return M_ortho.mul(M_persp);
+
+    return {
+        M_ortho,
+        M_persp,
+        OP: M_ortho.mul(M_persp)
+    };
+}
+
+function _get_model_coords_from_screen_coords(transforms, points, object_to_draw, canvas) {
+    const ////////////////////////////////
+        { M_ortho, M_persp, M_view } = transforms,
+        M = object_to_draw.model_matrix,
+        pointsW = 0.9000000357627869,
+        pointsZ = 0.8897876385932113,
+        O_inv = glm.inverse(M_ortho),
+        P_inv = glm.inverse(M_persp),
+        V_inv = glm.inverse(M_view),
+        M_inv = glm.inverse(M),
+        DIMS = [canvas.width, canvas.height, 1];
+    return points.map((screenPoint) => {
+        let /////////////////////////////
+            spz = screenPoint.concat(pointsZ),
+            sp = spz.map((pcoord, i) => {
+                return ((pcoord / DIMS[i]) - 0.5) * 2 * pointsW;
+            }),
+            spv = glm.vec4(sp.concat(pointsW)),
+            spv_O = O_inv.mul(spv),
+            spv_OP = P_inv.mul(spv_O),
+            spv_OPV = V_inv.mul(spv_OP),
+            spv_OPVM = M_inv.mul(spv_OPV),
+            spv_OPVM_a = Array.prototype.slice.call(spv_OPVM.elements);
+
+        return spv_OPVM_a;
+    });
 }
