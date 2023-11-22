@@ -17,7 +17,7 @@ let DEBUG = {
     print_coords: false,
     print: false,
     interactions: false,
-    animation: true
+    animation: false
 };
 
 export const init_scene = _init_scene;
