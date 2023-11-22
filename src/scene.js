@@ -4,7 +4,7 @@ import { isSystemLittleEndian } from 'wbase';
 
 import { auto_animation, listen_to_keys, get_params } from "./interactions";
 
-import { draw_objects, init_scene_webgl } from "./webgl_scene";
+import { draw_objects, init_scene_webgl, clear_scene_webgl } from "./webgl_scene";
 import { get_plugins_model, plugins_add_data_to_buffer, plugins_clear_all, setup_active_plugins } from "./plugins";
 import { debug_print_buffer, debug_print_transforms } from "./debug";
 
@@ -192,7 +192,10 @@ function _stop(scene_config) {
     program_running = false;
 
     //call plugins' cleanup function
-    return plugins_clear_all(scene_config);
+    return plugins_clear_all(
+        //clear objects' program, structures and data
+        clear_scene_webgl(scene_config)
+    );
 }
 
 

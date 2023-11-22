@@ -1,5 +1,5 @@
 import { create_program, fill_position_buffer, generate_attributes_from_config, init_vao, setup_indices, set_uniforms } from "wbase";
-import { plugins_config_into_shaders_data, plugins_drawloop_callback, plugins_program_init } from "./plugins";
+import { plugins_drawloop_callback, plugins_program_init } from "./plugins";
 
 /*********************************************************************
  * this module is responsible for the scene initialization and management
@@ -12,6 +12,7 @@ import { plugins_config_into_shaders_data, plugins_drawloop_callback, plugins_pr
 
 export const init_scene_webgl = _init_scene_webgl;
 export const draw_objects = _draw_objects;
+export const clear_scene_webgl = _clear_scene_webgl;
 
 
 ////////////////////////////////////////////////////////////
@@ -115,4 +116,9 @@ function _draw_call(obj_config, scene_config) {
     else {
         gl.drawArrays(gl[primitive], 0, number_of_points);
     }
+}
+
+function _clear_scene_webgl(scene_config) {
+    //TODO
+    return scene_config;
 }
