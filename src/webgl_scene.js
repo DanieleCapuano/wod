@@ -78,7 +78,7 @@ function _draw_objects(scene_config, time) {
     scene_config = (scene_config.draw_loop_callback && scene_config.draw_loop_callback(scene_config, time)) || scene_config;
     scene_config.objects_to_draw.forEach((obj_config) => {
         const
-            { object_program, draw_loop_callback } = obj_config,
+            { object_program, draw_loop_callback, afterdraw_loop_callback } = obj_config,
             { program_info } = object_program,
             { program, vao } = program_info;
 
@@ -97,6 +97,9 @@ function _draw_objects(scene_config, time) {
         }, object_program);
 
         _draw_call(obj_config, scene_config);
+
+        scene_config = (afterdraw_loop_callback && afterdraw_loop_callback(scene_config, obj_config, time)) || scene_config;
+        scene_config = (scene_config.afterdraw_loop_callback && scene_config.afterdraw_loop_callback(scene_config, time)) || scene_config;
 
         gl.useProgram(null);
         gl.bindVertexArray(null);
