@@ -126,6 +126,16 @@ function _compute_modelview(scene_config) {
                 obj_def,
                 canvas
             );
+            if (obj_def.translate_resolution_coords) {
+                const //////////////
+                    mins_maxs = (compare_fn, mins, coord) => {
+                        return mins.map((m, i) => Math.abs(compare_fn(m, coord[i])));
+                    },
+                    mins_xy = obj_def.screen_coordinates.reduce(mins_maxs.bind(null, Math.min), [Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER]),
+                    maxs_xy = obj_def.screen_coordinates.reduce(mins_maxs.bind(null, Math.max), [Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER])
+
+                obj_def.obj_resolution = maxs_xy.map((max_v, i) => max_v - mins_xy[i]);
+            }
         }
     }
 
@@ -175,8 +185,8 @@ function _do_run(scene_config, time) {
     if (program_running && !gl.isContextLost()) {
         draw_objects(Object.assign(
             scene_config,
+            { resolution: [canvas.width, canvas.height] },
             _compute_modelview(scene_config),
-            { resolution: [canvas.width, canvas.height] }
         ), time || 0);
         rafId = requestAnimationFrame(_do_run.bind(null, scene_config));
     }

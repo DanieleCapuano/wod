@@ -78,7 +78,7 @@ function _draw_objects(scene_config, time) {
     scene_config = (scene_config.draw_loop_callback && scene_config.draw_loop_callback(scene_config, time)) || scene_config;
     scene_config.objects_to_draw.forEach((obj_config) => {
         const
-            { object_program, draw_loop_callback, afterdraw_loop_callback } = obj_config,
+            { object_program, draw_loop_callback, afterdraw_loop_callback, obj_resolution } = obj_config,
             { program_info } = object_program,
             { program, vao } = program_info;
 
@@ -93,7 +93,7 @@ function _draw_objects(scene_config, time) {
             u_model: obj_config.model_matrix.elements,
             u_view: view_matrix.elements,
             u_projection: projection_matrix.elements,
-            u_resolution: resolution
+            u_resolution: obj_resolution || resolution
         }, object_program);
 
         _draw_call(obj_config, scene_config);
