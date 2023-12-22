@@ -6,14 +6,16 @@ import { plugins_config_into_shaders_data, set_plugins_requires_into_config } fr
 function _init_data(data) {
     return new Promise((res, err) => {
         data = data || {};
-        if (!data.objects_desc_url || !data.scene_desc_url) return err();
-        Promise.all([
-            _get_url(data.objects_desc_url),
-            _get_url(data.scene_desc_url)
-        ]).then((json_files) => {
-            let objects = json_files[0],
-                scene_desc = json_files[1],
-                objects_keys = Object.keys(objects);
+        if (!data.scene_desc_url) return err();
+        Promise.all(
+            (data.objects_desc_url ? [_get_url(data.objects_desc_url)] : [])
+                .concat([_get_url(data.scene_desc_url)])
+        ).then((json_files) => {
+            let {
+                objects,
+                objects_keys,
+                scene_desc
+            } = _parse_first_json_files(json_files);
 
             //this will read pugins' requires and and add them into the scene_desc config
             scene_desc = set_plugins_requires_into_config(scene_desc);
@@ -29,7 +31,7 @@ function _init_data(data) {
                         oj.program_info_def.shaders_data = plugins_config_into_shaders_data(oj.program_info_def.shaders_data);   //loads the plugins config in the "uniforms" and "attributes" fields of program_info structure being built
                     });
 
-                    _get_shaders_files(objects_jsons)
+                    _get_shaders_files(objects_jsons, scene_desc)
                         .then((shaders_code_arr_of_objs) => {
                             let _n_objects = objects_jsons.length;
                             const _loops_end = () => {
@@ -79,18 +81,48 @@ function _init_data(data) {
     });
 }
 
-function _get_shaders_files(objects_jsons) {
+function _parse_first_json_files(json_files) {
+    let objects, objects_keys, scene_desc;
+    if (json_files.length === 2) {
+        objects = json_files[0];
+        scene_desc = json_files[1];
+        objects_keys = Object.keys(objects);
+    }
+    else if (json_files.length === 1) {
+        //we've just the scene_desc file as input and the objects descriptions are therein (this is to be able to remove one desc file for each scene!)
+        scene_desc = json_files[0];
+
+        //this is to be able to remove some objects from one scene without the need to remove their keys 
+        //(the objects keys are structural if we've not a separate objects_desc.json file!)
+        objects_keys = Object.keys(scene_desc.objects)
+            .filter(okey => scene_desc.objects[okey].enabled);
+
+        //desc_url will contain the same url for an object json as it was with the objects_desc.json file
+        objects = objects_keys.reduce((o, okey) => Object.assign(o, {
+            [okey]: scene_desc.objects[okey].desc_url
+        }), {});
+    }
+
+    return {
+        objects,
+        objects_keys,
+        scene_desc
+    };
+}
+
+function _get_shaders_files(objects_jsons, scene_desc) {
     return Promise.all(
-        Object.keys(objects_jsons)
-            .map((obj_key) => {
-                let program_shaders = objects_jsons[obj_key].program_info_def.shaders;
-                return obj2map(
-                    Object.assign({
-                        vertex: _get_url(program_shaders.vertex.url, 'text'),
-                        fragment: _get_url(program_shaders.fragment.url, 'text')
-                    })
-                );
-            })
+        objects_jsons.map((object_def) => {
+            let program_shaders =   //the object definition inside a scene can overwrite the default "shaders" object defined inside the object def file itself
+                (scene_desc.objects[object_def.id] || {}).shaders ||
+                object_def.program_info_def.shaders;
+            return obj2map(
+                Object.assign({
+                    vertex: _get_url(program_shaders.vertex.url, 'text'),
+                    fragment: _get_url(program_shaders.fragment.url, 'text')
+                })
+            );
+        })
     )
 }
 
