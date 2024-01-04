@@ -27,7 +27,7 @@ function _init_data(data) {
                     objects_jsons.forEach((oj, i) => {
                         oj.id = objects_keys[i];
 
-                        oj.program_info_def = oj.program_info_def || {};
+                        oj.program_info_def = _set_program_info_def(oj, scene_desc);
                         oj.program_info_def.shaders_data = plugins_config_into_shaders_data(oj.program_info_def.shaders_data);   //loads the plugins config in the "uniforms" and "attributes" fields of program_info structure being built
                     });
 
@@ -110,12 +110,21 @@ function _parse_first_json_files(json_files) {
     };
 }
 
-function _get_shaders_files(objects_jsons, scene_desc) {
+//this allows a scene file to define a program_info_def overwrite (to prevent many object files which differ just for shaders)
+function _set_program_info_def(object_json, scene_desc) {
+    let { id } = object_json;
+    return Object.assign(
+        object_json.program_info_def,
+        (scene_desc[id] || {}).program_info_def || {}
+    );
+}
+
+function _get_shaders_files(objects_jsons) {
     return Promise.all(
         objects_jsons.map((object_def) => {
-            let program_shaders =   //the object definition inside a scene can overwrite the default "shaders" object defined inside the object def file itself
-                (scene_desc.objects[object_def.id] || {}).shaders ||
-                object_def.program_info_def.shaders;
+            //The object definition inside a scene can overwrite the default "program_info_def" object defined inside the object def file itself. 
+            //See the "_set_program_info_def" func above
+            let program_shaders = object_def.program_info_def.shaders;
             return obj2map(
                 Object.assign({
                     vertex: _get_url(program_shaders.vertex.url, 'text'),
