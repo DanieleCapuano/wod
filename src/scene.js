@@ -126,7 +126,7 @@ function _compute_modelview(scene_config) {
                 obj_def,
                 canvas
             );
-            if (obj_def.translate_resolution_coords) {
+            if (obj_def.should_remap_resolution) {
                 const //////////////
                     mins_maxs = (compare_fn, mins, coord) => {
                         return mins.map((m, i) => Math.abs(compare_fn(m, coord[i])));
@@ -134,7 +134,11 @@ function _compute_modelview(scene_config) {
                     mins_xy = obj_def.screen_coordinates.reduce(mins_maxs.bind(null, Math.min), [Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER]),
                     maxs_xy = obj_def.screen_coordinates.reduce(mins_maxs.bind(null, Math.max), [Number.MIN_SAFE_INTEGER, Number.MIN_SAFE_INTEGER])
 
-                obj_def.obj_resolution = maxs_xy.map((max_v, i) => max_v - mins_xy[i]);
+                Object.assign(obj_def, {
+                    should_remap_resolution: 1,
+                    mmin_resolution: mins_xy,
+                    mmax_resolution: maxs_xy
+                });
             }
         }
     }

@@ -72,18 +72,30 @@ function _draw_objects(scene_config, time) {
 
     gl.clearColor(0, 0, 0, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     gl.enable(gl.DEPTH_TEST);
 
     scene_config = (scene_config.draw_loop_callback && scene_config.draw_loop_callback(scene_config, time)) || scene_config;
     scene_config.objects_to_draw.forEach((obj_config) => {
         const
-            { object_program, draw_loop_callback, afterdraw_loop_callback, obj_resolution } = obj_config,
+            {
+                object_program,
+                draw_loop_callback,
+                afterdraw_loop_callback,
+                should_remap_resolution,
+                mmin_resolution,
+                mmax_resolution
+            } = obj_config,
             { program_info } = object_program,
             { program, vao } = program_info;
 
         gl.useProgram(program);
         gl.bindVertexArray(vao);
+        gl.viewport(
+            mmin_resolution[0] || 0,
+            mmin_resolution[1] || 0,
+            mmax_resolution[0] || gl.canvas.width,
+            mmax_resolution[1] || gl.canvas.height
+        );
 
         scene_config = (draw_loop_callback && draw_loop_callback(scene_config, obj_config, time)) || scene_config;
         scene_config = plugins_drawloop_callback(obj_config, scene_config);
@@ -93,7 +105,10 @@ function _draw_objects(scene_config, time) {
             u_model: obj_config.model_matrix.elements,
             u_view: view_matrix.elements,
             u_projection: projection_matrix.elements,
-            u_resolution: obj_resolution || resolution
+            u_resolution: resolution,
+            u_should_remap_resolution: should_remap_resolution,
+            u_mmin_resolution: mmin_resolution,
+            u_mmax_resolution: mmax_resolution
         }, object_program);
 
         _draw_call(obj_config, scene_config);
