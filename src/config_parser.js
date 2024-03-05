@@ -115,7 +115,7 @@ function _set_program_info_def(object_json, scene_desc) {
     let { id } = object_json;
     return Object.assign(
         object_json.program_info_def,
-        (scene_desc[id] || {}).program_info_def || {}
+        ((scene_desc.objects || {})[id] || {}).program_info_def || {}
     );
 }
 
