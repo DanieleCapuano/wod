@@ -86,15 +86,17 @@ function _draw_objects(scene_config, time) {
                 mmax_resolution
             } = obj_config,
             { program_info } = object_program,
-            { program, vao } = program_info;
+            { program, vao } = program_info,
+            mmin_res = mmin_resolution || [0, 0],
+            mmax_res = mmax_resolution || [gl.canvas.width, gl.canvas.height];
 
         gl.useProgram(program);
         gl.bindVertexArray(vao);
         gl.viewport(
-            mmin_resolution[0] || 0,
-            mmin_resolution[1] || 0,
-            mmax_resolution[0] || gl.canvas.width,
-            mmax_resolution[1] || gl.canvas.height
+            mmin_res[0] || 0,
+            mmin_res[1] || 0,
+            mmax_res[0] || gl.canvas.width,
+            mmax_res[1] || gl.canvas.height
         );
 
         scene_config = (draw_loop_callback && draw_loop_callback(scene_config, obj_config, time)) || scene_config;
@@ -107,8 +109,8 @@ function _draw_objects(scene_config, time) {
             u_projection: projection_matrix.elements,
             u_resolution: resolution,
             u_should_remap_resolution: should_remap_resolution,
-            u_mmin_resolution: mmin_resolution,
-            u_mmax_resolution: mmax_resolution
+            u_mmin_resolution: mmin_res,
+            u_mmax_resolution: mmax_res
         }, object_program);
 
         _draw_call(obj_config, scene_config);
