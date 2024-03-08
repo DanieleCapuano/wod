@@ -108,7 +108,7 @@ function _draw_objects(scene_config, time) {
             u_view: view_matrix.elements,
             u_projection: projection_matrix.elements,
             u_resolution: resolution,
-            u_should_remap_resolution: should_remap_resolution,
+            u_should_remap_resolution: should_remap_resolution || false,
             u_mmin_resolution: mmin_res,
             u_mmax_resolution: mmax_res
         }, object_program);
