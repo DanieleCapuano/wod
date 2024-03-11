@@ -68,10 +68,12 @@ function _init_webgl_program(gl, program_info, vert, frag) {
 
 function _draw_objects(scene_config, time) {
     const { gl, start_time } = scene_config;
-    const { view_matrix, projection_matrix, resolution } = scene_config;
+    const { view_matrix, projection_matrix, resolution, prevent_clear } = scene_config;
 
-    gl.clearColor(0, 0, 0, 1);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    if (!prevent_clear) {
+        gl.clearColor(0, 0, 0, 1);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    }
     gl.enable(gl.DEPTH_TEST);
 
     scene_config = (scene_config.draw_loop_callback && scene_config.draw_loop_callback(scene_config, time)) || scene_config;
