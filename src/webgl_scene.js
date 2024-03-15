@@ -68,7 +68,7 @@ function _init_webgl_program(gl, program_info, vert, frag) {
 
 function _draw_objects(scene_config, time) {
     const { gl, start_time } = scene_config;
-    const { view_matrix, projection_matrix, resolution, prevent_clear } = scene_config;
+    const { view_matrix, projection_matrix, resolution, prevent_clear, prevent_draw } = scene_config;
 
     if (!prevent_clear) {
         gl.clearColor(0, 0, 0, 1);
@@ -101,9 +101,6 @@ function _draw_objects(scene_config, time) {
             mmax_res[1] || gl.canvas.height
         );
 
-        scene_config = (draw_loop_callback && draw_loop_callback(scene_config, obj_config, time)) || scene_config;
-        scene_config = plugins_drawloop_callback(obj_config, scene_config);
-
         set_uniforms(gl, {
             u_time: (start_time || 0) + (time || 0),
             u_model: obj_config.model_matrix.elements,
@@ -115,7 +112,12 @@ function _draw_objects(scene_config, time) {
             u_mmax_resolution: mmax_res
         }, object_program);
 
-        _draw_call(obj_config, scene_config);
+        scene_config = (draw_loop_callback && draw_loop_callback(scene_config, obj_config, time)) || scene_config;
+        scene_config = plugins_drawloop_callback(obj_config, scene_config);
+
+        if (!prevent_draw) {
+            _draw_call(obj_config, scene_config);
+        }
 
         scene_config = (afterdraw_loop_callback && afterdraw_loop_callback(scene_config, obj_config, time)) || scene_config;
         scene_config = (scene_config.afterdraw_loop_callback && scene_config.afterdraw_loop_callback(scene_config, time)) || scene_config;
