@@ -67,8 +67,12 @@ function _init_webgl_program(gl, program_info, vert, frag) {
 
 
 function _draw_objects(scene_config, time) {
-    const { gl, start_time } = scene_config;
+    const { gl, start_time, nested_scene_before, nested_scene_after } = scene_config;
     const { view_matrix, projection_matrix, resolution, prevent_clear } = scene_config;
+
+    if (nested_scene_before) {
+        _draw_objects(nested_scene_before, time);
+    }
 
     if (!prevent_clear) {
         gl.clearColor(0, 0, 0, 1);
@@ -126,6 +130,10 @@ function _draw_objects(scene_config, time) {
         gl.useProgram(null);
         gl.bindVertexArray(null);
     });
+
+    if (nested_scene_after) {
+        _draw_objects(nested_scene_after, time);
+    }
 }
 
 function _draw_call(obj_config, scene_config) {

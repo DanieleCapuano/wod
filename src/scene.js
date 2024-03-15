@@ -202,14 +202,17 @@ function _do_run(scene_config, time) {
 }
 
 
-function _stop(scene_config) {
+function _stop(scene_config, dont_clear) {
     program_running = false;
 
-    //call plugins' cleanup function
-    return plugins_clear_all(
-        //clear objects' program, structures and data
-        clear_scene_webgl(scene_config)
-    );
+
+    return dont_clear ?
+        scene_config :
+        //call plugins' cleanup function
+        plugins_clear_all(
+            //clear objects' program, structures and data
+            clear_scene_webgl(scene_config)
+        );
 }
 
 
