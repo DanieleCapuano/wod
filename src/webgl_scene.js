@@ -68,7 +68,7 @@ function _init_webgl_program(gl, program_info, vert, frag) {
 
 function _draw_objects(scene_config, time) {
     const { gl, start_time } = scene_config;
-    const { view_matrix, projection_matrix, resolution, prevent_clear, prevent_draw } = scene_config;
+    const { view_matrix, projection_matrix, resolution, prevent_clear } = scene_config;
 
     if (!prevent_clear) {
         gl.clearColor(0, 0, 0, 1);
@@ -82,6 +82,7 @@ function _draw_objects(scene_config, time) {
             {
                 object_program,
                 draw_loop_callback,
+                prevent_draw,
                 afterdraw_loop_callback,
                 should_remap_resolution,
                 mmin_resolution,
