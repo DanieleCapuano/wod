@@ -27,7 +27,7 @@ export const clear_scene_webgl = _clear_scene_webgl;
    }
 */
 function _init_scene_webgl(scene_config) {
-    const { gl, objects_to_draw, } = scene_config;
+    const { gl, objects_to_draw, nested_scene_before, nested_scene_after } = scene_config;
     objects_to_draw.forEach((obj_config, program_index) => {
         const //////////
             { program_info_def, coords_dim, coords, indices } = obj_config,
@@ -37,6 +37,7 @@ function _init_scene_webgl(scene_config) {
         //ugly procedural writing but let's keep this as clear as possible
         let program_info = { program_index, programs_number: objects_to_draw.length };
         program_info = generate_attributes_from_config(gl, program_info, shaders_data, coords_dim);
+        program_info = _compute_ubo_index(program_info, nested_scene_before, nested_scene_after);
         program_info = _init_webgl_program(gl, program_info, vertex.code, fragment.code);
         program_info = fill_position_buffer(gl, program_info, coords);
 
@@ -55,6 +56,35 @@ function _init_scene_webgl(scene_config) {
 
     //draw_fn possibly used in plugins' callbacks at runtime
     return Object.assign(scene_config, { draw_fn: _draw_call });
+}
+
+function _compute_ubo_index(program_info, scene_config_before, scene_config_after) {
+    let ubo_index = 0;
+    const _browse_scene_config = (sc_cfg, id) => {
+        if (!sc_cfg) return id;
+        sc_cfg.objects_to_draw.forEach(otd => {
+            const ////////////////////////
+                { max } = Math,
+                { object_program } = otd,
+                { program_info } = object_program,
+                { ubos } = program_info;
+
+            Object.keys(ubos).forEach(ubo_k => id = max(id, ubos[ubo_k].uboUniqueBind));
+        });
+
+        const { nested_scene_before, nested_scene_after } = sc_cfg
+        if (nested_scene_before) id = _browse_scene_config(nested_scene_before, id);
+        if (nested_scene_after) id = _browse_scene_config(nested_scene_after, id);
+
+        return id;
+    };
+
+    let ubo_start_id = [scene_config_before, scene_config_after].reduce((id, sc) => _browse_scene_config(sc, id), ubo_index);
+    ubo_start_id = ubo_start_id > 0 ? ubo_start_id + 1 : ubo_start_id;
+    return Object.assign(
+        program_info,
+        { ubo_start_id }
+    );
 }
 
 function _init_webgl_program(gl, program_info, vert, frag) {

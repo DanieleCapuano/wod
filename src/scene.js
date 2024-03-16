@@ -24,10 +24,6 @@ export const init_scene = _init_scene;
 export const run_scene = _run;
 export const stop_scene = _stop;
 
-
-let ////////////////////////////////////////
-    program_running = false;
-
 function _init_scene(scene_config) {
     const { canvas } = (scene_config || {});
     if (!canvas || !scene_config) return;
@@ -178,15 +174,15 @@ function _compute_model_matrix(obj_id, scene_desc) {
 /////////////////////////////////////////////////////
 
 function _run(scene_config) {
-    program_running = true;
+    scene_config.scene_running = true;
     _do_run(scene_config);
 }
 
 let rafId = null;
 function _do_run(scene_config, time) {
-    const { canvas, gl } = scene_config;
+    const { canvas, gl, scene_running } = scene_config;
 
-    if (program_running && !gl.isContextLost()) {
+    if (scene_running && !gl.isContextLost()) {
         draw_objects(Object.assign(
             scene_config,
             { resolution: [canvas.width, canvas.height] },
@@ -203,10 +199,9 @@ function _do_run(scene_config, time) {
 
 
 function _stop(scene_config, dont_clear) {
-    program_running = false;
+    scene_config.scene_running = false;
 
-
-    return dont_clear ?
+    return (dont_clear === true) ?
         scene_config :
         //call plugins' cleanup function
         plugins_clear_all(
