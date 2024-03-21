@@ -25,6 +25,7 @@ function _set_plugins_requires_into_config(scene_desc) {
                     reqs = plugin.requires;
 
                 plugin._active = true;
+                plugin._clients = (plugin._clients || 0) + 1;
                 if (reqs) {
                     reqs = Array.isArray(reqs) ? reqs : [reqs];
                     reqs.forEach(req_plugin_desc => {
@@ -153,12 +154,15 @@ function _plugins_clear_all(scene_config) {
     _get_active_plugins_a()
         .reduce(
             (o, plugin) => {
-                plugin._active = false;
-                plugin.set_active && plugin.set_active(false, o);
+                if (--plugin._clients <= 0) {
+                    plugin._clients = 0;
+                    plugin._active = false;
+                    plugin.set_active && plugin.set_active(false, o);
+                }
                 return plugin.cleanup ? plugin.cleanup(o) : o
             },
             scene_config
         );
-    _active_plugins = null;
+    _active_plugins = _active_plugins.filter(ap => ap._clients > 0);
     return scene_config;
 }
