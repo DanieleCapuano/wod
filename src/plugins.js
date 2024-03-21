@@ -73,9 +73,13 @@ function _setup_active_plugins(config) {
                 let plugin_id = plugin_with_type.id,
                     plugin = plugins[plugin_type][plugin_id];
 
-                _active_plugins = _active_plugins || [];
-                _active_plugins.push(plugin);
-                return plugin.set_active(true, cc);  //set_active will return the config
+                let conf = cc;
+                if (_active_plugins.indexOf(plugin) === -1) {
+                    _active_plugins = _active_plugins || [];
+                    _active_plugins.push(plugin);
+                    conf = plugin.set_active(true, cc);  //set_active will return the config
+                }
+                return conf;
             }, c);
         }
         return c;
