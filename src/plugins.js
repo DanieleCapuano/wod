@@ -74,8 +74,8 @@ function _setup_active_plugins(config) {
                     plugin = plugins[plugin_type][plugin_id];
 
                 let conf = cc;
+                _active_plugins = _active_plugins || [];
                 if (_active_plugins.indexOf(plugin) === -1) {
-                    _active_plugins = _active_plugins || [];
                     _active_plugins.push(plugin);
                     conf = plugin.set_active(true, cc);  //set_active will return the config
                 }
