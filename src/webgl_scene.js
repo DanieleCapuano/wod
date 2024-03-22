@@ -161,6 +161,8 @@ function _draw_objects(scene_config, time) {
         gl.bindVertexArray(null);
     });
 
+    scene_config = (scene_config.afterdraw_loop_callback && scene_config.afterdraw_loop_callback(scene_config, time)) || scene_config;
+
     if (nested_scene_after) {
         _draw_objects(nested_scene_after, time);
     }
