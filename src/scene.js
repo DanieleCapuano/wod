@@ -178,7 +178,6 @@ function _run(scene_config) {
     _do_run(scene_config);
 }
 
-let rafId = null;
 function _do_run(scene_config, time) {
     const { canvas, gl, scene_running } = scene_config;
 
@@ -188,11 +187,11 @@ function _do_run(scene_config, time) {
             { resolution: [canvas.width, canvas.height] },
             _compute_modelview(scene_config),
         ), time || 0);
-        rafId = requestAnimationFrame(_do_run.bind(null, scene_config));
+        scene_config.rafId = requestAnimationFrame(_do_run.bind(null, scene_config));
     }
     else {
-        rafId !== null && cancelAnimationFrame(rafId);
-        rafId = null;
+        scene_config.rafId !== null && cancelAnimationFrame(scene_config.rafId);
+        scene_config.rafId = null;
         return;
     }
 }
@@ -200,8 +199,8 @@ function _do_run(scene_config, time) {
 
 function _stop(scene_config, dont_clear) {
     scene_config.scene_running = false;
-    rafId !== null && cancelAnimationFrame(rafId);
-    rafId = null;
+    scene_config.rafId !== null && cancelAnimationFrame(scene_config.rafId);
+    scene_config.rafId = null;
 
     return (dont_clear === true) ?
         scene_config :
