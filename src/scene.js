@@ -200,6 +200,8 @@ function _do_run(scene_config, time) {
 
 function _stop(scene_config, dont_clear) {
     scene_config.scene_running = false;
+    rafId !== null && cancelAnimationFrame(rafId);
+    rafId = null;
 
     return (dont_clear === true) ?
         scene_config :
