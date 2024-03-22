@@ -66,7 +66,7 @@ function _setup_active_plugins(config) {
     const { scene_desc } = config;
 
     //let's activate each plugin
-    return Object.keys(plugins).reduce((c, plugin_type) => {
+    let CC = Object.keys(plugins).reduce((c, plugin_type) => {
         if (scene_desc[plugin_type]) {
             scene_desc[plugin_type] = Array.isArray(scene_desc[plugin_type]) ? scene_desc[plugin_type] : [scene_desc[plugin_type]];
             return scene_desc[plugin_type].reduce((cc, plugin_with_type) => {
@@ -85,6 +85,9 @@ function _setup_active_plugins(config) {
         }
         return c;
     }, config);
+
+    _sort_active_plugins(_active_plugins);
+    return CC;
 }
 
 function _get_active_plugins_o() {
@@ -101,13 +104,14 @@ function _get_active_plugins_o() {
 }
 
 function _get_active_plugins_a() {
-    return _active_plugins || Object.keys(plugins)
-        .flatMap(plug_type => {
-            return Object.keys(plugins[plug_type])
-                .filter(plug_id => plugins[plug_type][plug_id].get_active() || plugins[plug_type][plug_id]._active)
-                .map(plug_id => plugins[plug_type][plug_id]);
-        })
-        .sort((a, b) => (a.is_require || a.is_base) ? -1 : 1);
+    return _active_plugins || _sort_active_plugins(
+        Object.keys(plugins)
+            .flatMap(plug_type => {
+                return Object.keys(plugins[plug_type])
+                    .filter(plug_id => plugins[plug_type][plug_id].get_active() || plugins[plug_type][plug_id]._active)
+                    .map(plug_id => plugins[plug_type][plug_id]);
+            })
+    );
 }
 
 function _get_plugins_model(desc) {
@@ -168,7 +172,16 @@ function _plugins_clear_all(scene_config) {
             },
             scene_config
         );
-    _active_plugins = _active_plugins.filter(ap => ap._clients > 0);
+    _active_plugins = _sort_active_plugins(
+        _active_plugins
+            .filter(ap => ap._clients > 0)
+    );
     _active_plugins = _active_plugins.length === 0 ? null : _active_plugins;
+
+    // _active_plugins = null;
     return scene_config;
+}
+
+function _sort_active_plugins(ap) {
+    return ap.sort((a, b) => (a.is_require || a.is_base) ? -1 : 1);
 }
