@@ -173,7 +173,7 @@ function _plugins_clear_all(scene_config) {
             scene_config
         );
     _active_plugins = _sort_active_plugins(
-        _active_plugins
+        (_active_plugins || [])
             .filter(ap => ap._clients > 0)
     );
     _active_plugins = _active_plugins.length === 0 ? null : _active_plugins;
