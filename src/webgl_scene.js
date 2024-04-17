@@ -110,7 +110,8 @@ function _draw_objects(scene_config, time) {
     }
     gl.enable(gl.DEPTH_TEST);
 
-    scene_config = (scene_config.draw_loop_callback && scene_config.draw_loop_callback(scene_config, time)) || scene_config;
+    let _utime = (start_time || 0) + (time || 0);
+    scene_config = (scene_config.draw_loop_callback && scene_config.draw_loop_callback(scene_config, _utime)) || scene_config;
     scene_config.objects_to_draw.forEach((obj_config) => {
         const
             {
@@ -137,7 +138,7 @@ function _draw_objects(scene_config, time) {
         );
 
         set_uniforms(gl, {
-            u_time: (start_time || 0) + (time || 0),
+            u_time: _utime,
             u_model: obj_config.model_matrix.elements,
             u_view: view_matrix.elements,
             u_projection: projection_matrix.elements,
@@ -147,15 +148,15 @@ function _draw_objects(scene_config, time) {
             u_mmax_resolution: mmax_res
         }, object_program);
 
-        scene_config = (draw_loop_callback && draw_loop_callback(scene_config, obj_config, time)) || scene_config;
+        scene_config = (draw_loop_callback && draw_loop_callback(scene_config, obj_config, _utime)) || scene_config;
         scene_config = plugins_drawloop_callback(obj_config, scene_config);
 
         if (!prevent_draw) {
             _draw_call(obj_config, scene_config);
         }
 
-        scene_config = (afterdraw_loop_callback && afterdraw_loop_callback(scene_config, obj_config, time)) || scene_config;
-        scene_config = (scene_config.afterdraw_loop_callback && scene_config.afterdraw_loop_callback(scene_config, time)) || scene_config;
+        scene_config = (afterdraw_loop_callback && afterdraw_loop_callback(scene_config, obj_config, _utime)) || scene_config;
+        scene_config = (scene_config.afterdraw_loop_callback && scene_config.afterdraw_loop_callback(scene_config, _utime)) || scene_config;
 
         gl.useProgram(null);
         gl.bindVertexArray(null);
