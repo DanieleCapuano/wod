@@ -110,7 +110,7 @@ function _draw_objects(scene_config, time) {
     }
     gl.enable(gl.DEPTH_TEST);
 
-    let _utime = (start_time || 0) + (time || 0);
+    let _utime = Math.max(0, (start_time || 0) + (time || 0));
     scene_config = (scene_config.draw_loop_callback && scene_config.draw_loop_callback(scene_config, _utime)) || scene_config;
     scene_config.objects_to_draw.forEach((obj_config) => {
         const
