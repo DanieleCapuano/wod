@@ -98,7 +98,7 @@ function _init_webgl_program(gl, program_info, vert, frag) {
 
 function _draw_objects(scene_config, time) {
     const { gl, start_time, nested_scene_before, nested_scene_after } = scene_config;
-    const { view_matrix, projection_matrix, resolution, prevent_clear } = scene_config;
+    const { view_matrix, projection_matrix, resolution, prevent_clear, prevent_depth } = scene_config;
 
     if (nested_scene_before) {
         _draw_objects(nested_scene_before, time);
@@ -108,7 +108,10 @@ function _draw_objects(scene_config, time) {
         gl.clearColor(0, 0, 0, 1);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     }
-    gl.enable(gl.DEPTH_TEST);
+    if (!prevent_depth) {
+        gl.enable(gl.DEPTH_TEST);
+    }
+
 
     let _utime = Math.max(0, (start_time || 0) + (time || 0));
     scene_config = (scene_config.draw_loop_callback && scene_config.draw_loop_callback(scene_config, _utime)) || scene_config;
